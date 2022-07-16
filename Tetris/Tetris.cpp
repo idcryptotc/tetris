@@ -129,9 +129,18 @@ enum class Colors
 };
 
 const int SHIFT_MULTIPLIER = 2;
+const int SIDE_SQUARE = 4;
 const int WIDTH = 10 * SHIFT_MULTIPLIER, HEIGHT = 22;
 const int BASIC_X = 12, BASIC_Y = 0;
-const int LEVEL_TIME_STEP[] = { 500,480,460,440,420,400,380,360,350,100 };
+const int LEVEL_TIME_STEP[]
+{
+	500,480,460,440,420,
+	400,380,360,340,320,
+	300,280,260,240,220,
+	200,180,160,140,120,
+	100,80,60,40,20
+};
+const int COUNT_STEP_CHAPTER = 8;
 const int NEXT_X1 = 31, NEXT_X2 = 38, NEXT_Y1 = 1, NEXT_Y2 = 4;
 const int CURRENT_X1 = 6, CURRENT_X2 = 25, CURRENT_Y1 = 3, CURRENT_Y2 = 21;
 const int SCORE_X = 40, SCORE_Y = 7;
@@ -338,7 +347,7 @@ public:
 			position = nextPosition;
 			break;
 		case Actions::DOWN:
-			y = nextY;
+			y = nextY > 18 ? 18 : nextY;
 			break;
 		case Actions::ROTATE:
 			position = nextPosition;
@@ -348,7 +357,7 @@ public:
 		}
 
 		nextX = x;
-		nextY = y + 1;
+		nextY = (y + 1) > 18 ? 18 : y + 1;
 	}
 
 	void setUse(bool state) { isUse = state; }
@@ -373,8 +382,9 @@ void createGameField
 (
 	const Figure &nextFigure
 	, const Figure &currentFigure
-	, std::vector<std::pair<std::wstring, std::vector<int>>> gameField
+	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 	, const std::vector<std::vector<int>> &gameStack
+	, const int &score
 );
 void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 int positionById(int figureId);
@@ -392,6 +402,8 @@ void clearLines
 (
 	std::vector<std::vector<std::pair<int, int>>> &gameStack
 	, const Figure &nextFigure
+	, int &score
+	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 );
 
 int main()
@@ -416,22 +428,31 @@ void createGameField
 (
 	const Figure &nextFigure
 	, const Figure &currentFigure
-	, std::vector<std::pair<std::wstring, std::vector<int>>> gameField
+	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 	, const std::vector<std::vector<std::pair<int, int>>> &gameStack
+	, const int &score
 )
 {
+	int idFigure = nextFigure.getId();
+	int positionFigure = nextFigure.getPosition();
+	int colorFigureAsInt = nextFigure.getColorAsInt();
 	unsigned short shift = 1 << 15;
 
 	for (int y = NEXT_Y1; y < NEXT_Y2 + 1; ++y)
 	{
 		for (int x = NEXT_X1; x < NEXT_X2 + 1; x += SHIFT_MULTIPLIER, shift >>= 1)
 		{
-			if (FIGURES[nextFigure.getId()][nextFigure.getPosition()] & shift)
+			if (FIGURES[idFigure][positionFigure] & shift)
 			{
 				gameField[y].first[x] = L'█';
 				gameField[y].first[x + 1] = L'█';
-				gameField[y].second[x] = nextFigure.getColorAsInt();
-				gameField[y].second[x + 1] = nextFigure.getColorAsInt();
+				gameField[y].second[x] = colorFigureAsInt;
+				gameField[y].second[x + 1] = colorFigureAsInt;
+			}
+			else
+			{
+				gameField[y].first[x] = L' ';
+				gameField[y].first[x + 1] = L' ';
 			}
 		}
 	}
@@ -445,20 +466,35 @@ void createGameField
 		}
 	}
 
+	int currentScore = score;
+
+	for (int i = 0; i < 6; ++i)
+	{
+		gameField[SCORE_Y].first[SCORE_X - i] = (wchar_t)(currentScore % 10 + L'0');
+		currentScore /= 10;
+	}
+
 	if (currentFigure.getUse())
 	{
+		idFigure = currentFigure.getId();
+		positionFigure = currentFigure.getPosition();
+		colorFigureAsInt = currentFigure.getColorAsInt();
+		int currentFigurePositionYStart = currentFigure.getPositionY();
+		int currentFigurePositionYFinish = currentFigure.getPositionY() + SIDE_SQUARE;
+		int currentFigurePositionXStart = currentFigure.getPositionX();
+		int currentFigurePositionXFinish = currentFigure.getPositionX() + SIDE_SQUARE * SHIFT_MULTIPLIER;
 		shift = 1 << 15;
 
-		for (int y = currentFigure.getPositionY(); y < currentFigure.getPositionY() + 4; ++y)
+		for (int y = currentFigurePositionYStart; y < currentFigurePositionYFinish; ++y)
 		{
-			for (int x = currentFigure.getPositionX(); x < currentFigure.getPositionX() + 8; x += 2, shift >>= 1)
+			for (int x = currentFigurePositionXStart; x < currentFigurePositionXFinish; x += 2, shift >>= 1)
 			{
-				if (FIGURES[currentFigure.getId()][currentFigure.getPosition()] & shift)
+				if (FIGURES[idFigure][positionFigure] & shift)
 				{
 					gameField[y].first[x] = L'█';
 					gameField[y].first[x + 1] = L'█';
-					gameField[y].second[x] = currentFigure.getColorAsInt();
-					gameField[y].second[x + 1] = currentFigure.getColorAsInt();
+					gameField[y].second[x] = colorFigureAsInt;
+					gameField[y].second[x + 1] = colorFigureAsInt;
 				}
 			}
 		}
@@ -473,7 +509,9 @@ void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> 
 
 	for (const auto &i : gameField)
 	{
-		for (std::size_t j = 0; j < i.first.size(); ++j)
+		std::size_t iFirstSize = i.first.size();
+
+		for (std::size_t j = 0; j < iFirstSize; ++j)
 		{
 			if (i.first[j] == L'█')
 			{
@@ -611,11 +649,11 @@ void programSettings()
 	GetConsoleCursorInfo(hBasicBuffer, &structCursorInfo);
 	structCursorInfo.bVisible = FALSE;
 	SetConsoleCursorInfo(hBasicBuffer, &structCursorInfo);
-	
+
 	system("mode con cols=80 lines=25");
 	hWnd = GetConsoleWindow();
 	GetWindowRect(hWnd, &basicRect);
-	
+
 	if (!SetConsoleActiveScreenBuffer(hDoubleBuffer))
 	{
 		MyErrorExit(L"SetConsoleActiveScreenBuffer");
@@ -719,15 +757,21 @@ bool checkCollisions(const Figure &currentFigure, std::vector<std::vector<std::p
 		|| key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
 	bool isXNext = key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
 	bool isYNext = key == KeyCodes::SPACE && currentFigure.getPositionY(true) != tempGameStack.size() - 3;
+	int currentFigurePositionYStart = currentFigure.getPositionY(isYNext);
+	int currentFigurePositionYFinish = currentFigure.getPositionY(isYNext) + SIDE_SQUARE;
+	int currentFigurePositionXStart = currentFigure.getPositionX(isXNext) - CURRENT_X1;
+	int currentFigurePositionXFinish = currentFigure.getPositionX(isXNext) - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
+	int currentFigureId = currentFigure.getId();
+	int currentFigurePosition = currentFigure.getPosition(isPositionNext);
 	unsigned short shift = 1 << 15;
 
-	for (int y = currentFigure.getPositionY(isYNext); y < currentFigure.getPositionY(isYNext) + 4; ++y)
+	for (int y = currentFigurePositionYStart; y < currentFigurePositionYFinish; ++y)
 	{
-		for (int x = currentFigure.getPositionX(isXNext) - CURRENT_X1;
-			x < currentFigure.getPositionX(isXNext) - CURRENT_X1 + 8;
+		for (int x = currentFigurePositionXStart;
+			x < currentFigurePositionXFinish;
 			x += 2, shift >>= 1)
 		{
-			if (FIGURES[currentFigure.getId()][currentFigure.getPosition(isPositionNext)] & shift)
+			if (FIGURES[currentFigureId][currentFigurePosition] & shift)
 			{
 				++tempGameStack[y][x].first;
 				++tempGameStack[y][x + 1].first;
@@ -746,18 +790,26 @@ bool checkCollisions(const Figure &currentFigure, std::vector<std::vector<std::p
 void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack)
 {
 	int lastLine = (currentFigure.getPositionY() + 3) == gameStack.size() ? 1 : 0;
+	int positionYStart = currentFigure.getPositionY() - lastLine;
+	int positionYFinish = currentFigure.getPositionY() + SIDE_SQUARE - lastLine;
+	int positionXStart = currentFigure.getPositionX() - CURRENT_X1;
+	int positionXFinish = currentFigure.getPositionX() - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
+	int currentFigureId = currentFigure.getId();
+	int currentFigurePosition = currentFigure.getPosition();
+	int currentFigureColorAsInt = currentFigure.getColorAsInt();
 	unsigned short shift = 1 << 15;
 
-	for (int y = currentFigure.getPositionY() - lastLine; y < currentFigure.getPositionY() + 4 - lastLine; ++y)
+	for (int y = positionYStart; y < positionYFinish; ++y)
 	{
-		for (int x = currentFigure.getPositionX() - CURRENT_X1; x < currentFigure.getPositionX() - CURRENT_X1 + 8; x += 2, shift >>= 1)
+		for (int x = positionXStart; x < positionXFinish; x += 2, shift >>= 1)
 		{
-			if (FIGURES[currentFigure.getId()][currentFigure.getPosition()] & shift)
+			if (FIGURES[currentFigureId][currentFigurePosition] & shift)
 			{
 				++gameStack[y][x].first;
 				++gameStack[y][x + 1].first;
-				gameStack[y][x].second = currentFigure.getColorAsInt();
-				gameStack[y][x + 1].second = currentFigure.getColorAsInt();
+				gameStack[y][x].second = currentFigureColorAsInt;
+				gameStack[y][x + 1].second = currentFigureColorAsInt;
+				++gameStack[y][WIDTH].first;
 			}
 		}
 	}
@@ -765,7 +817,8 @@ void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<in
 
 bool playGame()
 {
-	int levelGame = 9;
+	int levelGame = 0;
+	int score = 0;
 	int stepProgress;
 	int figureId = rand() % FIGURES.size();
 	int figurePosition = positionById(figureId);
@@ -773,17 +826,19 @@ bool playGame()
 	figureId = rand() % FIGURES.size();
 	figurePosition = positionById(figureId);
 	Figure currentFigure;
-	std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH, { 0,0 }));
+	std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH + 1, { 0,0 }));
+	std::vector<std::pair<std::wstring, std::vector<int>>> gameField = GAME_FIELD;
 
 	while (true)
 	{
-		clearLines(gameStack, nextFigure);
+		clearKeyboardBuffer();
+		clearLines(gameStack, nextFigure, score, gameField);
 		currentFigure = nextFigure;
 		currentFigure.setUse(true);
 		figureId = rand() % FIGURES.size();
 		figurePosition = positionById(figureId);
 		nextFigure.setBasicParameters(figureId, figurePosition);
-		createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
+		createGameField(nextFigure, currentFigure, gameField, gameStack, score);
 
 		if (checkGameOver(gameStack))
 		{
@@ -794,7 +849,7 @@ bool playGame()
 		{
 			stepProgress = 0;
 
-			while (stepProgress < 8)
+			while (stepProgress < COUNT_STEP_CHAPTER)
 			{
 				if (GetAsyncKeyState((INT)KeyCodes::LEFT_ARROW))
 				{
@@ -809,101 +864,111 @@ bool playGame()
 						currentFigure.action(Actions::DEFAULT);
 					}
 
-					createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
+					createGameField(nextFigure, currentFigure, gameField, gameStack, score);
 				}
-
-				if (GetAsyncKeyState((INT)KeyCodes::RIGHT_ARROW))
+				else
 				{
-					currentFigure.shiftRight();
-
-					if (!checkCollisions(currentFigure, gameStack, KeyCodes::RIGHT_ARROW))
+					if (GetAsyncKeyState((INT)KeyCodes::RIGHT_ARROW))
 					{
-						currentFigure.action(Actions::RIGHT);
-					}
-					else
-					{
-						currentFigure.action(Actions::DEFAULT);
-					}
+						currentFigure.shiftRight();
 
-					createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
-				}
-
-				if (GetAsyncKeyState((INT)KeyCodes::UP_ARROW))
-				{
-					currentFigure.rotateUp();
-
-					if (!checkCollisions(currentFigure, gameStack, KeyCodes::UP_ARROW))
-					{
-						currentFigure.action(Actions::ROTATE);
-					}
-					else
-					{
-						currentFigure.action(Actions::DEFAULT);
-					}
-
-					createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
-				}
-
-				if (GetAsyncKeyState((INT)KeyCodes::DOWN_ARROW))
-				{
-					currentFigure.rotateDown();
-
-					if (!checkCollisions(currentFigure, gameStack, KeyCodes::DOWN_ARROW))
-					{
-						currentFigure.action(Actions::ROTATE);
-					}
-					else
-					{
-						currentFigure.action(Actions::DEFAULT);
-					}
-
-					createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
-				}
-
-				if (GetAsyncKeyState((INT)KeyCodes::SPACE))
-				{
-					if (line < 19)
-					{
-						currentFigure.shiftDown();
-
-						if (!checkCollisions(currentFigure, gameStack, KeyCodes::SPACE))
+						if (!checkCollisions(currentFigure, gameStack, KeyCodes::RIGHT_ARROW))
 						{
-							currentFigure.action(Actions::DOWN);
-
-							if (line == 18)
-							{
-								setFigure(currentFigure, gameStack);
-								currentFigure.setUse(false);
-							}
+							currentFigure.action(Actions::RIGHT);
 						}
 						else
 						{
-							setFigure(currentFigure, gameStack);
-							line = 19;
-							break;
+							currentFigure.action(Actions::DEFAULT);
 						}
 
-						++line;
-						++stepProgress;
-						createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
+						createGameField(nextFigure, currentFigure, gameField, gameStack, score);
 					}
-				}
-
-				if (GetAsyncKeyState((INT)KeyCodes::ESCAPE))
-				{
-					switch (returnToMenu())
+					else
 					{
-					case 1: return true;
-					case 2:
+						if (GetAsyncKeyState((INT)KeyCodes::UP_ARROW))
 						{
-							createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
-							break;
+							currentFigure.rotateUp();
+
+							if (!checkCollisions(currentFigure, gameStack, KeyCodes::UP_ARROW))
+							{
+								currentFigure.action(Actions::ROTATE);
+							}
+							else
+							{
+								currentFigure.action(Actions::DEFAULT);
+							}
+
+							createGameField(nextFigure, currentFigure, gameField, gameStack, score);
 						}
-					case 3: return false;
+						else
+						{
+							if (GetAsyncKeyState((INT)KeyCodes::DOWN_ARROW))
+							{
+								currentFigure.rotateDown();
+
+								if (!checkCollisions(currentFigure, gameStack, KeyCodes::DOWN_ARROW))
+								{
+									currentFigure.action(Actions::ROTATE);
+								}
+								else
+								{
+									currentFigure.action(Actions::DEFAULT);
+								}
+
+								createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+							}
+							else
+							{
+								if (GetAsyncKeyState((INT)KeyCodes::SPACE))
+								{
+									if (line < 19)
+									{
+										currentFigure.shiftDown();
+
+										if (!checkCollisions(currentFigure, gameStack, KeyCodes::SPACE))
+										{
+											currentFigure.action(Actions::DOWN);
+
+											if (line == 18)
+											{
+												setFigure(currentFigure, gameStack);
+												currentFigure.setUse(false);
+											}
+										}
+										else
+										{
+											setFigure(currentFigure, gameStack);
+											line = 19;
+											break;
+										}
+
+										++line;
+										++stepProgress;
+										createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+									}
+								}
+								else
+								{
+									if (GetAsyncKeyState((INT)KeyCodes::ESCAPE))
+									{
+										switch (returnToMenu())
+										{
+										case 1: return true;
+										case 2:
+											{
+												createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+												break;
+											}
+										case 3: return false;
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 
-				Sleep(LEVEL_TIME_STEP[levelGame] / 8);
+				Sleep(LEVEL_TIME_STEP[levelGame] / COUNT_STEP_CHAPTER);
 				++stepProgress;
 			}
 
@@ -929,7 +994,7 @@ bool playGame()
 				}
 			}
 
-			createGameField(nextFigure, currentFigure, GAME_FIELD, gameStack);
+			createGameField(nextFigure, currentFigure, gameField, gameStack, score);
 		}
 
 		nextFigure.setUse(false);
@@ -964,38 +1029,73 @@ void clearLines
 (
 	std::vector<std::vector<std::pair<int, int>>> &gameStack
 	, const Figure &nextFigure
+	, int &score
+	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 )
 {
-	int count;
+	int gameStackSize = gameStack.size();
 
-	for (std::size_t i = 0; i < gameStack.size(); ++i)
+	for (std::size_t i = 3; i < gameStackSize; ++i)
 	{
-		count = 0;
+		std::size_t gameStackISize = gameStack[i].size() - 1;
 
-		for (std::size_t j = 0; j < gameStack[i].size(); ++j)
+		if (gameStack[i][WIDTH].first == 10)
 		{
-			if (gameStack[i][j].first > 0)
+			unsigned int mask = 0x8;
+			gameStack[i][WIDTH].first = -1;
+
+			if (i + 1 < 22)
 			{
-				++count;
+				mask += gameStack[i + 1][WIDTH].first == 10 ? (gameStack[i + 1][WIDTH].first = -1, 0x4) : 0x0;
 			}
-		}
 
-		if (count == WIDTH)
-		{
-			//for (std::size_t j = 0; j < gameStack[i].size(); ++j)
-			//{
-			//	gameStack[i][j] = { 0,0 };
-
-			//	createGameField(nextFigure, nextFigure, GAME_FIELD, gameStack);
-			//}
-
-			for (std::size_t k = i; k > 0; --k)
+			if (i + 2 < 22)
 			{
-				for (std::size_t j = 0; j < gameStack[i].size(); ++j)
+				mask += gameStack[i + 2][WIDTH].first == 10 ? (gameStack[i + 2][WIDTH].first = -1, 0x2) : 0x0;
+			}
+
+			if (i + 3 < 22)
+			{
+				mask += gameStack[i + 3][WIDTH].first == 10 ? (gameStack[i + 3][WIDTH].first = -1, 0x1) : 0x0;
+			}
+
+			for (std::size_t j = 0; j < gameStackISize; ++j)
+			{
+				mask & 8 ? gameField[i].first[CURRENT_X1 + j] = L' ' : L'i';
+				mask & 4 ? gameField[i + 1].first[CURRENT_X1 + j] = L' ' : L'i';
+				mask & 2 ? gameField[i + 2].first[CURRENT_X1 + j] = L' ' : L'i';
+				mask & 1 ? gameField[i + 3].first[CURRENT_X1 + j] = L' ' : L'i';
+				viewGameField(gameField);
+			}
+
+			switch (((mask & 8) >> 3) + ((mask & 4) >> 2) + ((mask & 2) >> 1) + (mask & 1))
+			{
+			case 4:
+				score += 4;
+			case 3:
+				score += 3;
+			case 2:
+				score += 2;
+			case 1:
+				score += 1;
+			}
+
+			for (std::size_t k = gameStackSize - 1, t = k; k > 0 && t > 0; --t)
+			{
+				if (gameStack[t][WIDTH].first == -1)
 				{
-					gameStack[k][j] = gameStack[k - 1][j];
+					continue;
 				}
+
+				for (std::size_t j = 0; j < gameStackISize + 1; ++j)
+				{
+					gameStack[k][j] = gameStack[t][j];
+				}
+
+				--k;
 			}
+
+			break;
 		}
 	}
 }
