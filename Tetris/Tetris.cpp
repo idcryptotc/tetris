@@ -132,7 +132,7 @@ const int SHIFT_MULTIPLIER = 2;
 const int SIDE_SQUARE = 4;
 const int WIDTH = 10 * SHIFT_MULTIPLIER, HEIGHT = 22;
 const int BASIC_X = 12, BASIC_Y = 0;
-const int LEVEL_TIME_STEP[]
+const std::vector<unsigned int> LEVEL_TIME_STEP
 {
 	500,480,460,440,420,
 	400,380,360,340,320,
@@ -140,10 +140,19 @@ const int LEVEL_TIME_STEP[]
 	200,180,160,140,120,
 	100,80,60,40,20
 };
+const std::vector<unsigned int> LEVEL_SCORE
+{
+	0,50,100,150,200,
+	300,400,500,600,700,
+	900,1100,1300,1500,1700,
+	2000,2300,2600,2900,3200,
+	4000,5000,6000,7000,8000
+};
 const int COUNT_STEP_CHAPTER = 8;
 const int NEXT_X1 = 31, NEXT_X2 = 38, NEXT_Y1 = 1, NEXT_Y2 = 4;
 const int CURRENT_X1 = 6, CURRENT_X2 = 25, CURRENT_Y1 = 3, CURRENT_Y2 = 21;
 const int SCORE_X = 40, SCORE_Y = 7;
+const int LEVEL_X = 40, LEVEL_Y = 9;
 
 const std::vector<std::vector<unsigned short>> FIGURES =
 {
@@ -222,7 +231,7 @@ const std::vector<std::pair<std::wstring, std::vector<int>>> GAME_FIELD
 	{{L"     ║                    ║                  "},std::vector<int>(45, 0)},
 	{{L"     ║                    ║  Score 000000    "},std::vector<int>(45, 0)},
 	{{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-	{{L"     ║                    ║  Level      1    "},std::vector<int>(45, 0)},
+	{{L"     ║                    ║  Level     01    "},std::vector<int>(45, 0)},
 	{{L"     ║                    ║                  "},std::vector<int>(45, 0)},
 	{{L"     ║                    ║                  "},std::vector<int>(45, 0)},
 	{{L"     ║                    ║                  "},std::vector<int>(45, 0)},
@@ -385,6 +394,7 @@ void createGameField
 	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 	, const std::vector<std::vector<int>> &gameStack
 	, const int &score
+	, const int &level
 );
 void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 int positionById(int figureId);
@@ -404,7 +414,9 @@ void clearLines
 	, const Figure &nextFigure
 	, int &score
 	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
+	, const int &level
 );
+void checkScoreForLevel(const int &score, int &level);
 
 int main()
 {
@@ -431,6 +443,7 @@ void createGameField
 	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
 	, const std::vector<std::vector<std::pair<int, int>>> &gameStack
 	, const int &score
+	, const int &level
 )
 {
 	int idFigure = nextFigure.getId();
@@ -472,6 +485,14 @@ void createGameField
 	{
 		gameField[SCORE_Y].first[SCORE_X - i] = (wchar_t)(currentScore % 10 + L'0');
 		currentScore /= 10;
+	}
+
+	int currentLevel = level;
+
+	for (int i = 0; i < 2; ++i)
+	{
+		gameField[LEVEL_Y].first[LEVEL_X - i] = (wchar_t)(currentLevel % 10 + L'0');
+		currentLevel /= 10;
 	}
 
 	if (currentFigure.getUse())
@@ -817,7 +838,7 @@ void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<in
 
 bool playGame()
 {
-	int levelGame = 0;
+	int levelGame = 1;
 	int score = 0;
 	int stepProgress;
 	int figureId = rand() % FIGURES.size();
@@ -832,13 +853,14 @@ bool playGame()
 	while (true)
 	{
 		clearKeyboardBuffer();
-		clearLines(gameStack, nextFigure, score, gameField);
+		clearLines(gameStack, nextFigure, score, gameField, levelGame);
+		checkScoreForLevel(score, levelGame);
 		currentFigure = nextFigure;
 		currentFigure.setUse(true);
 		figureId = rand() % FIGURES.size();
 		figurePosition = positionById(figureId);
 		nextFigure.setBasicParameters(figureId, figurePosition);
-		createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+		createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 
 		if (checkGameOver(gameStack))
 		{
@@ -864,7 +886,7 @@ bool playGame()
 						currentFigure.action(Actions::DEFAULT);
 					}
 
-					createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+					createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 				}
 				else
 				{
@@ -881,7 +903,7 @@ bool playGame()
 							currentFigure.action(Actions::DEFAULT);
 						}
 
-						createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+						createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 					}
 					else
 					{
@@ -898,7 +920,7 @@ bool playGame()
 								currentFigure.action(Actions::DEFAULT);
 							}
 
-							createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+							createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 						}
 						else
 						{
@@ -915,7 +937,7 @@ bool playGame()
 									currentFigure.action(Actions::DEFAULT);
 								}
 
-								createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+								createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 							}
 							else
 							{
@@ -944,7 +966,7 @@ bool playGame()
 
 										++line;
 										++stepProgress;
-										createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+										createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 									}
 								}
 								else
@@ -956,7 +978,7 @@ bool playGame()
 										case 1: return true;
 										case 2:
 											{
-												createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+												createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 												break;
 											}
 										case 3: return false;
@@ -994,7 +1016,7 @@ bool playGame()
 				}
 			}
 
-			createGameField(nextFigure, currentFigure, gameField, gameStack, score);
+			createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 		}
 
 		nextFigure.setUse(false);
@@ -1031,6 +1053,7 @@ void clearLines
 	, const Figure &nextFigure
 	, int &score
 	, std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
+	, const int &level
 )
 {
 	int gameStackSize = gameStack.size();
@@ -1071,13 +1094,13 @@ void clearLines
 			switch (((mask & 8) >> 3) + ((mask & 4) >> 2) + ((mask & 2) >> 1) + (mask & 1))
 			{
 			case 4:
-				score += 4;
+				score += 4 * level;
 			case 3:
-				score += 3;
+				score += 3 * level;
 			case 2:
-				score += 2;
+				score += 2 * level;
 			case 1:
-				score += 1;
+				score += 1 * level;
 			}
 
 			for (std::size_t k = gameStackSize - 1, t = k; k > 0 && t > 0; --t)
@@ -1095,6 +1118,23 @@ void clearLines
 				--k;
 			}
 
+			break;
+		}
+	}
+}
+
+void checkScoreForLevel(const int &score, int &level)
+{
+	std::size_t size = LEVEL_SCORE.size();
+
+	for (std::size_t i = level - 1; i < size; ++i)
+	{
+		if (score > LEVEL_SCORE[i])
+		{
+			level = i + 1;
+		}
+		else
+		{
 			break;
 		}
 	}
