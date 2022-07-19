@@ -393,7 +393,7 @@ void createGameField
     , const Figure &currentFigure
     , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
     , const std::vector<std::vector<int>> &gameStack
-    , const int &score
+    , const unsigned int &score
     , const int &level
 );
 void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
@@ -412,11 +412,11 @@ void clearLines
 (
     std::vector<std::vector<std::pair<int, int>>> &gameStack
     , const Figure &nextFigure
-    , int &score
+    , unsigned int &score
     , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
     , const int &level
 );
-void checkScoreForLevel(const int &score, int &level);
+void checkScoreForLevel(const unsigned int &score, int &level);
 
 int main()
 {
@@ -442,7 +442,7 @@ void createGameField
     , const Figure &currentFigure
     , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
     , const std::vector<std::vector<std::pair<int, int>>> &gameStack
-    , const int &score
+    , const unsigned int &score
     , const int &level
 )
 {
@@ -839,7 +839,7 @@ void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<in
 bool playGame()
 {
     int levelGame = 1;
-    int score = 0;
+    unsigned int score = 0;
     int stepProgress;
     int figureId = rand() % FIGURES.size();
     int figurePosition = positionById(figureId);
@@ -1051,12 +1051,12 @@ void clearLines
 (
     std::vector<std::vector<std::pair<int, int>>> &gameStack
     , const Figure &nextFigure
-    , int &score
+    , unsigned int &score
     , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
     , const int &level
 )
 {
-    int gameStackSize = gameStack.size();
+    std::size_t gameStackSize = gameStack.size();
 
     for (std::size_t i = 3; i < gameStackSize; ++i)
     {
@@ -1123,7 +1123,7 @@ void clearLines
     }
 }
 
-void checkScoreForLevel(const int &score, int &level)
+void checkScoreForLevel(const unsigned int &score, int &level)
 {
     std::size_t size = LEVEL_SCORE.size();
 
