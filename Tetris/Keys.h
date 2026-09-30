@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include <windows.h>
@@ -121,28 +122,25 @@ namespace Tetris
         SCROLL_LOCK = 145
     };
 
-    // Набор клавиш, управляющих игрой.
-    // Сейчас используется набор по умолчанию; в дальнейшем его можно
-    // будет загрузить из файла настроек или задать в меню.
-    struct KeyBindings
+    // Действия игры, которым назначаются клавиши.
+    // Порядок совпадает с порядком элементов KeyBindings::keys.
+    enum class BindingAction : unsigned char
     {
-        KeyCodes left;         // движение влево
-        KeyCodes right;        // движение вправо
-        KeyCodes rotate_up;    // поворот (клавиша вверх)
-        KeyCodes rotate_down;  // поворот (клавиша вниз)
-        KeyCodes hard_drop;    // мгновенный сброс фигуры
-        KeyCodes exit;         // возврат в меню
+        LEFT = 0,        // движение влево
+        RIGHT = 1,       // движение вправо
+        ROTATE_UP = 2,   // поворот (клавиша вверх)
+        ROTATE_DOWN = 3, // поворот (клавиша вниз)
+        HARD_DROP = 4,   // мгновенный сброс фигуры
+        EXIT = 5,        // возврат в меню
+        COUNT            // не действие, а количество действий
     };
 
-    // Набор клавиш по умолчанию.
-    inline constexpr KeyBindings kDefaultBindings
+    // Набор клавиш, управляющих игрой.
+    // Массив (а не именованные поля) упрощает сериализацию
+    // в файл настроек и обход по действиям.
+    struct KeyBindings
     {
-        KeyCodes::LEFT_ARROW,
-        KeyCodes::RIGHT_ARROW,
-        KeyCodes::UP_ARROW,
-        KeyCodes::DOWN_ARROW,
-        KeyCodes::SPACE,
-        KeyCodes::ESCAPE
+        KeyCodes keys[static_cast<std::size_t>(BindingAction::COUNT)];
     };
 
     // Возвращает true, если клавиша сейчас нажата.

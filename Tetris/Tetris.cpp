@@ -1,13 +1,16 @@
 ﻿#include "stdafx.h"
 
 #include "Keys.h"
+#include "Settings.h"
 
 // Точечный импорт: тянем в глобальное пространство только то, что используем,
 // а не весь namespace Tetris (как это делала бы using-директива).
 using Tetris::KeyCodes;
+using Tetris::BindingAction;
 using Tetris::IsKeyPressed;
-using Tetris::KeyBindings;
-using Tetris::kDefaultBindings;
+using Tetris::g_bindings;
+using Tetris::LoadBindings;
+using Tetris::ConfigureBindings;
 
 enum class Actions
 {
@@ -329,16 +332,30 @@ int main()
 {
     ProgramSettings();
 
-    do
+    LoadBindings(g_bindings); // настройки клавиш из tetris_settings.ini
+
+    while (true)
     {
         system("cls");
 
-        if (!StartMenu())
+        int menuItem = StartMenu();
+        if (menuItem == 3)
         {
-            return 0;
+            return 0; // Выход
         }
+
+        if (menuItem == 2)
+        {
+            ConfigureBindings(g_bindings);
+            continue; // вернуться в меню, а не сразу в игру
+        }
+
+        if (!PlayGame())
+        {
+            break; // выбранный в игре «Выход»
+        }
+        // PlayGame() вернул true — конец партии, предлагаем сыграть снова
     }
-    while (PlayGame());
 
     return 0;
 }
@@ -484,22 +501,18 @@ int StartMenu()
     {
         std::wcout << L"Меню" << std::endl;
         std::wcout << L"1 - Новая игра" << std::endl;
-        std::wcout << L"2 - Выход" << std::endl;
+        std::wcout << L"2 - Настройка клавиш" << std::endl;
+        std::wcout << L"3 - Выход" << std::endl;
         menuItem = _getch() - '0';
 
-        if (menuItem == 2)
-        {
-            return 0;
-        }
-        else
+        if (menuItem < 1 || menuItem > 3)
         {
             system("cls");
-
-            if (menuItem == 1)
-            {
-                return menuItem;
-            }
+            continue;
         }
+
+        system("cls");
+        return menuItem;
     }
 }
 
@@ -757,7 +770,6 @@ bool PlayGame()
     Figure currentFigure;
     std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH + 1, { 0,0 }));
     std::vector<std::pair<std::wstring, std::vector<int>>> gameField = GAME_FIELD;
-    KeyBindings bindings = kDefaultBindings; // можно заменить на загрузку из настроек
 
     while (true)
     {
@@ -782,7 +794,7 @@ bool PlayGame()
 
             while (stepProgress < COUNT_STEP_CHAPTER)
             {
-                if (IsKeyPressed(bindings.left))
+                if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::LEFT)]))
                 {
                     currentFigure.ShiftLeft();
 
@@ -799,7 +811,7 @@ bool PlayGame()
                 }
                 else
                 {
-                    if (IsKeyPressed(bindings.right))
+                    if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::RIGHT)]))
                     {
                         currentFigure.ShiftRight();
 
@@ -816,7 +828,7 @@ bool PlayGame()
                     }
                     else
                     {
-                        if (IsKeyPressed(bindings.rotate_up))
+                        if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::ROTATE_UP)]))
                         {
                             currentFigure.RotateUp();
 
@@ -833,7 +845,7 @@ bool PlayGame()
                         }
                         else
                         {
-                            if (IsKeyPressed(bindings.rotate_down))
+                            if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::ROTATE_DOWN)]))
                             {
                                 currentFigure.RotateDown();
 
@@ -850,7 +862,7 @@ bool PlayGame()
                             }
                             else
                             {
-                                if (IsKeyPressed(bindings.hard_drop))
+                                if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::HARD_DROP)]))
                                 {
                                     if (line < 19)
                                     {
@@ -880,7 +892,7 @@ bool PlayGame()
                                 }
                                 else
                                 {
-                                    if (IsKeyPressed(bindings.exit))
+                                    if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::EXIT)]))
                                     {
                                         switch (ReturnToMenu())
                                         {
