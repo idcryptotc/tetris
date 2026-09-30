@@ -1,107 +1,13 @@
 ﻿#include "stdafx.h"
 
-enum class KeyCodes : INT
-{
-    BACKSPACE = 8,
-    TAB = 9,
-    ENTER = 13,
-    SHIFT = 16,
-    CTRL = 17,
-    ALT = 18,
-    PAUSE_BREAK = 19,
-    CAPS_LOCK = 20,
-    ESCAPE = 27,
-    PAGE_UP = 33,
-    PAGE_DOWN = 34,
-    END = 35,
-    HOME = 36,
-    LEFT_ARROW = 37,
-    UP_ARROW = 38,
-    RIGHT_ARROW = 39,
-    DOWN_ARROW = 40,
-    INSERT = 45,
-    DELETE_ = 46,
-    _0 = 48,
-    _1 = 49,
-    _2 = 50,
-    _3 = 51,
-    _4 = 52,
-    _5 = 53,
-    _6 = 54,
-    _7 = 55,
-    _8 = 56,
-    _9 = 57,
-    A = 65,
-    B = 66,
-    C = 67,
-    D = 68,
-    E = 69,
-    F = 70,
-    G = 71,
-    H = 72,
-    I = 73,
-    J = 74,
-    K = 75,
-    L = 76,
-    M = 77,
-    N = 78,
-    O = 79,
-    P = 80,
-    Q = 81,
-    R = 82,
-    S = 83,
-    T = 84,
-    U = 85,
-    V = 86,
-    W = 87,
-    X = 88,
-    Y = 89,
-    Z = 90,
-    LEFT_WINDOW = 91,
-    RIGHT_WINDOW = 92,
-    SELECT_KEY = 93,
-    NUMPAD_0 = 96,
-    NUMPAD_1 = 97,
-    NUMPAD_2 = 98,
-    NUMPAD_3 = 99,
-    NUMPAD_4 = 100,
-    NUMPAD_5 = 101,
-    NUMPAD_6 = 102,
-    NUMPAD_7 = 103,
-    NUMPAD_8 = 104,
-    NUMPAD_9 = 105,
-    MULTIPLY = 106,
-    ADD = 107,
-    SUBTRACT = 109,
-    DECIMAL_POINT = 110,
-    DIVIDE = 111,
-    F1 = 112,
-    F2 = 113,
-    F3 = 114,
-    F4 = 115,
-    F5 = 116,
-    F6 = 117,
-    F7 = 118,
-    F8 = 119,
-    F9 = 120,
-    F10 = 121,
-    F11 = 122,
-    F12 = 123,
-    NUM_LOCK = 144,
-    SCROLL_LOCK = 145,
-    SEMI_COLON = 186,
-    EQUAL_SIGN = 187,
-    COMMA = 188,
-    DASH = 189,
-    PERIOD = 190,
-    FORWARD_SLASH = 191,
-    GRAVE_ACCENT = 192,
-    OPEN_BRACKET = 219,
-    BACK_SLASH = 220,
-    CLOSE_BRAKET = 221,
-    SINGLE_QUOTE = 222,
-    SPACE = 32
-};
+#include "Keys.h"
+
+// Точечный импорт: тянем в глобальное пространство только то, что используем,
+// а не весь namespace Tetris (как это делала бы using-директива).
+using Tetris::KeyCodes;
+using Tetris::IsKeyPressed;
+using Tetris::KeyBindings;
+using Tetris::kDefaultBindings;
 
 enum class Actions
 {
@@ -270,7 +176,7 @@ public:
         color = FIGURE_COLORS.at(id);
     }
 
-    void setBasicParameters(int figureId, int figurePosition)
+    void SetBasicParameters(int figureId, int figurePosition)
     {
         id = figureId;
         color = FIGURE_COLORS.at(id);
@@ -283,9 +189,9 @@ public:
         isUse = true;
     }
 
-    void setPosition(int figurePosition) { position = figurePosition; }
+    void SetPosition(int figurePosition) { position = figurePosition; }
 
-    void shiftRight()
+    void ShiftRight()
     {
         if (x < CURRENT_X2 - 7)
         {
@@ -300,7 +206,7 @@ public:
         }
     }
 
-    void shiftLeft()
+    void ShiftLeft()
     {
         if (x > CURRENT_X1)
         {
@@ -315,9 +221,9 @@ public:
         }
     }
 
-    void shiftDown() { nextY = y + 1; }
+    void ShiftDown() { nextY = y + 1; }
 
-    void rotateUp()
+    void RotateUp()
     {
         if (NEXT_POSITION_ROTATE_UP[id].find(position) != NEXT_POSITION_ROTATE_UP[id].end())
         {
@@ -325,7 +231,7 @@ public:
         }
     }
 
-    void rotateDown()
+    void RotateDown()
     {
         if (NEXT_POSITION_ROTATE_DOWN[id].find(position) != NEXT_POSITION_ROTATE_DOWN[id].end())
         {
@@ -333,17 +239,17 @@ public:
         }
     }
 
-    int getPositionX(bool isNext = false) const { return isNext ? nextX : x; }
+    int GetPositionX(bool isNext = false) const { return isNext ? nextX : x; }
 
-    int getPositionY(bool isNext = false) const { return isNext ? nextY : y; }
+    int GetPositionY(bool isNext = false) const { return isNext ? nextY : y; }
 
-    int getId() const { return id; }
+    int GetId() const { return id; }
 
-    int getColorAsInt() const { return (int)color; }
+    int GetColorAsInt() const { return (int)color; }
 
-    int getPosition(bool isNext = false) const { return isNext ? nextPosition : position; }
+    int GetPosition(bool isNext = false) const { return isNext ? nextPosition : position; }
 
-    void action(Actions action)
+    void Action(Actions action)
     {
         switch (action)
         {
@@ -369,9 +275,9 @@ public:
         nextY = (y + 1) > 18 ? 18 : y + 1;
     }
 
-    void setUse(bool state) { isUse = state; }
+    void SetUse(bool state) { isUse = state; }
 
-    bool getUse() const { return isUse; }
+    bool GetUse() const { return isUse; }
 };
 
 HANDLE hBasicBuffer;
@@ -387,7 +293,7 @@ CONSOLE_SCREEN_BUFFER_INFO csbi;
 CONSOLE_FONT_INFOEX fontInfo;
 
 void MyErrorExit(const wchar_t *comment);
-void createGameField
+void CreateGameField
 (
     const Figure &nextFigure
     , const Figure &currentFigure
@@ -396,19 +302,19 @@ void createGameField
     , const unsigned int &score
     , const int &level
 );
-void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
-int positionById(int figureId);
-int startMenu();
-int returnToMenu();
-void programSettings();
-void doubleBufferingBegin();
-void doubleBufferingEnd();
-bool playGame();
-bool checkCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key);
-void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack);
-bool checkGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack);
-void clearKeyboardBuffer();
-void clearLines
+void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
+int PositionById(int figureId);
+int StartMenu();
+int ReturnToMenu();
+void ProgramSettings();
+void DoubleBufferingBegin();
+void DoubleBufferingEnd();
+bool PlayGame();
+bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key);
+void SetFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack);
+bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack);
+void ClearKeyboardBuffer();
+void ClearLines
 (
     std::vector<std::vector<std::pair<int, int>>> &gameStack
     , const Figure &nextFigure
@@ -416,27 +322,28 @@ void clearLines
     , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
     , const int &level
 );
-void checkScoreForLevel(const unsigned int &score, int &level);
+void CheckScoreForLevel(const unsigned int &score, int &level);
+void PlayMusic();
 
 int main()
 {
-    programSettings();
+    ProgramSettings();
 
     do
     {
         system("cls");
 
-        if (!startMenu())
+        if (!StartMenu())
         {
             return 0;
         }
     }
-    while (playGame());
+    while (PlayGame());
 
     return 0;
 }
 
-void createGameField
+void CreateGameField
 (
     const Figure &nextFigure
     , const Figure &currentFigure
@@ -446,9 +353,9 @@ void createGameField
     , const int &level
 )
 {
-    int idFigure = nextFigure.getId();
-    int positionFigure = nextFigure.getPosition();
-    int colorFigureAsInt = nextFigure.getColorAsInt();
+    int idFigure = nextFigure.GetId();
+    int positionFigure = nextFigure.GetPosition();
+    int colorFigureAsInt = nextFigure.GetColorAsInt();
     unsigned short shift = 1 << 15;
 
     for (int y = NEXT_Y1; y < NEXT_Y2 + 1; ++y)
@@ -495,15 +402,15 @@ void createGameField
         currentLevel /= 10;
     }
 
-    if (currentFigure.getUse())
+    if (currentFigure.GetUse())
     {
-        idFigure = currentFigure.getId();
-        positionFigure = currentFigure.getPosition();
-        colorFigureAsInt = currentFigure.getColorAsInt();
-        int currentFigurePositionYStart = currentFigure.getPositionY();
-        int currentFigurePositionYFinish = currentFigure.getPositionY() + SIDE_SQUARE;
-        int currentFigurePositionXStart = currentFigure.getPositionX();
-        int currentFigurePositionXFinish = currentFigure.getPositionX() + SIDE_SQUARE * SHIFT_MULTIPLIER;
+        idFigure = currentFigure.GetId();
+        positionFigure = currentFigure.GetPosition();
+        colorFigureAsInt = currentFigure.GetColorAsInt();
+        int currentFigurePositionYStart = currentFigure.GetPositionY();
+        int currentFigurePositionYFinish = currentFigure.GetPositionY() + SIDE_SQUARE;
+        int currentFigurePositionXStart = currentFigure.GetPositionX();
+        int currentFigurePositionXFinish = currentFigure.GetPositionX() + SIDE_SQUARE * SHIFT_MULTIPLIER;
         shift = 1 << 15;
 
         for (int y = currentFigurePositionYStart; y < currentFigurePositionYFinish; ++y)
@@ -521,12 +428,12 @@ void createGameField
         }
     }
 
-    viewGameField(gameField);
+    ViewGameField(gameField);
 }
 
-void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField)
+void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField)
 {
-    doubleBufferingBegin();
+    DoubleBufferingBegin();
 
     for (const auto &i : gameField)
     {
@@ -549,10 +456,10 @@ void viewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> 
         std::wcout << std::endl;
     }
 
-    doubleBufferingEnd();
+    DoubleBufferingEnd();
 }
 
-int positionById(int figureId)
+int PositionById(int figureId)
 {
     switch (figureId)
     {
@@ -567,10 +474,10 @@ int positionById(int figureId)
     }
 }
 
-int startMenu()
+int StartMenu()
 {
     system("cls");
-    clearKeyboardBuffer();
+    ClearKeyboardBuffer();
     int menuItem;
 
     while (true)
@@ -596,10 +503,10 @@ int startMenu()
     }
 }
 
-int returnToMenu()
+int ReturnToMenu()
 {
     system("cls");
-    clearKeyboardBuffer();
+    ClearKeyboardBuffer();
     int menuItem;
 
     while (true)
@@ -631,7 +538,7 @@ void MyErrorExit(const wchar_t *comment)
     exit(0);
 }
 
-void programSettings()
+void ProgramSettings()
 {
     _setmode(_fileno(stdout), _O_U16TEXT);
     srand(static_cast<unsigned>(time(NULL)));
@@ -722,7 +629,7 @@ void programSettings()
     }
 }
 
-void doubleBufferingBegin()
+void DoubleBufferingBegin()
 {
     GetWindowRect(hWnd, &currentRect);
 
@@ -767,23 +674,23 @@ void doubleBufferingBegin()
     }
 }
 
-void doubleBufferingEnd()
+void DoubleBufferingEnd()
 {
     SetConsoleActiveScreenBuffer(hBasicBuffer);
 }
 
-bool checkCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key)
+bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key)
 {
     bool isPositionNext = key == KeyCodes::UP_ARROW || key == KeyCodes::DOWN_ARROW
         || key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
     bool isXNext = key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
-    bool isYNext = key == KeyCodes::SPACE && currentFigure.getPositionY(true) != tempGameStack.size() - 3;
-    int currentFigurePositionYStart = currentFigure.getPositionY(isYNext);
-    int currentFigurePositionYFinish = currentFigure.getPositionY(isYNext) + SIDE_SQUARE;
-    int currentFigurePositionXStart = currentFigure.getPositionX(isXNext) - CURRENT_X1;
-    int currentFigurePositionXFinish = currentFigure.getPositionX(isXNext) - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
-    int currentFigureId = currentFigure.getId();
-    int currentFigurePosition = currentFigure.getPosition(isPositionNext);
+    bool isYNext = key == KeyCodes::SPACE && currentFigure.GetPositionY(true) != tempGameStack.size() - 3;
+    int currentFigurePositionYStart = currentFigure.GetPositionY(isYNext);
+    int currentFigurePositionYFinish = currentFigure.GetPositionY(isYNext) + SIDE_SQUARE;
+    int currentFigurePositionXStart = currentFigure.GetPositionX(isXNext) - CURRENT_X1;
+    int currentFigurePositionXFinish = currentFigure.GetPositionX(isXNext) - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
+    int currentFigureId = currentFigure.GetId();
+    int currentFigurePosition = currentFigure.GetPosition(isPositionNext);
     unsigned short shift = 1 << 15;
 
     for (int y = currentFigurePositionYStart; y < currentFigurePositionYFinish; ++y)
@@ -808,16 +715,16 @@ bool checkCollisions(const Figure &currentFigure, std::vector<std::vector<std::p
     return false;
 }
 
-void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack)
+void SetFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack)
 {
-    int lastLine = (currentFigure.getPositionY() + 3) == gameStack.size() ? 1 : 0;
-    int positionYStart = currentFigure.getPositionY() - lastLine;
-    int positionYFinish = currentFigure.getPositionY() + SIDE_SQUARE - lastLine;
-    int positionXStart = currentFigure.getPositionX() - CURRENT_X1;
-    int positionXFinish = currentFigure.getPositionX() - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
-    int currentFigureId = currentFigure.getId();
-    int currentFigurePosition = currentFigure.getPosition();
-    int currentFigureColorAsInt = currentFigure.getColorAsInt();
+    int lastLine = (currentFigure.GetPositionY() + 3) == gameStack.size() ? 1 : 0;
+    int positionYStart = currentFigure.GetPositionY() - lastLine;
+    int positionYFinish = currentFigure.GetPositionY() + SIDE_SQUARE - lastLine;
+    int positionXStart = currentFigure.GetPositionX() - CURRENT_X1;
+    int positionXFinish = currentFigure.GetPositionX() - CURRENT_X1 + SIDE_SQUARE * SHIFT_MULTIPLIER;
+    int currentFigureId = currentFigure.GetId();
+    int currentFigurePosition = currentFigure.GetPosition();
+    int currentFigureColorAsInt = currentFigure.GetColorAsInt();
     unsigned short shift = 1 << 15;
 
     for (int y = positionYStart; y < positionYFinish; ++y)
@@ -836,33 +743,35 @@ void setFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<in
     }
 }
 
-bool playGame()
+bool PlayGame()
 {
+    //PlayMusic();
     int levelGame = 1;
     unsigned int score = 0;
     int stepProgress;
     int figureId = rand() % FIGURES.size();
-    int figurePosition = positionById(figureId);
+    int figurePosition = PositionById(figureId);
     Figure nextFigure(figureId, figurePosition);
     figureId = rand() % FIGURES.size();
-    figurePosition = positionById(figureId);
+    figurePosition = PositionById(figureId);
     Figure currentFigure;
     std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH + 1, { 0,0 }));
     std::vector<std::pair<std::wstring, std::vector<int>>> gameField = GAME_FIELD;
+    KeyBindings bindings = kDefaultBindings; // можно заменить на загрузку из настроек
 
     while (true)
     {
-        clearKeyboardBuffer();
-        clearLines(gameStack, nextFigure, score, gameField, levelGame);
-        checkScoreForLevel(score, levelGame);
+        ClearKeyboardBuffer();
+        ClearLines(gameStack, nextFigure, score, gameField, levelGame);
+        CheckScoreForLevel(score, levelGame);
         currentFigure = nextFigure;
-        currentFigure.setUse(true);
+        currentFigure.SetUse(true);
         figureId = rand() % FIGURES.size();
-        figurePosition = positionById(figureId);
-        nextFigure.setBasicParameters(figureId, figurePosition);
-        createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+        figurePosition = PositionById(figureId);
+        nextFigure.SetBasicParameters(figureId, figurePosition);
+        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
 
-        if (checkGameOver(gameStack))
+        if (CheckGameOver(gameStack))
         {
             return true;
         }
@@ -873,112 +782,112 @@ bool playGame()
 
             while (stepProgress < COUNT_STEP_CHAPTER)
             {
-                if (GetAsyncKeyState((INT)KeyCodes::LEFT_ARROW))
+                if (IsKeyPressed(bindings.left))
                 {
-                    currentFigure.shiftLeft();
+                    currentFigure.ShiftLeft();
 
-                    if (!checkCollisions(currentFigure, gameStack, KeyCodes::LEFT_ARROW))
+                    if (!CheckCollisions(currentFigure, gameStack, KeyCodes::LEFT_ARROW))
                     {
-                        currentFigure.action(Actions::LEFT);
+                        currentFigure.Action(Actions::LEFT);
                     }
                     else
                     {
-                        currentFigure.action(Actions::DEFAULT);
+                        currentFigure.Action(Actions::DEFAULT);
                     }
 
-                    createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                    CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                 }
                 else
                 {
-                    if (GetAsyncKeyState((INT)KeyCodes::RIGHT_ARROW))
+                    if (IsKeyPressed(bindings.right))
                     {
-                        currentFigure.shiftRight();
+                        currentFigure.ShiftRight();
 
-                        if (!checkCollisions(currentFigure, gameStack, KeyCodes::RIGHT_ARROW))
+                        if (!CheckCollisions(currentFigure, gameStack, KeyCodes::RIGHT_ARROW))
                         {
-                            currentFigure.action(Actions::RIGHT);
+                            currentFigure.Action(Actions::RIGHT);
                         }
                         else
                         {
-                            currentFigure.action(Actions::DEFAULT);
+                            currentFigure.Action(Actions::DEFAULT);
                         }
 
-                        createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                     }
                     else
                     {
-                        if (GetAsyncKeyState((INT)KeyCodes::UP_ARROW))
+                        if (IsKeyPressed(bindings.rotate_up))
                         {
-                            currentFigure.rotateUp();
+                            currentFigure.RotateUp();
 
-                            if (!checkCollisions(currentFigure, gameStack, KeyCodes::UP_ARROW))
+                            if (!CheckCollisions(currentFigure, gameStack, KeyCodes::UP_ARROW))
                             {
-                                currentFigure.action(Actions::ROTATE);
+                                currentFigure.Action(Actions::ROTATE);
                             }
                             else
                             {
-                                currentFigure.action(Actions::DEFAULT);
+                                currentFigure.Action(Actions::DEFAULT);
                             }
 
-                            createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                         }
                         else
                         {
-                            if (GetAsyncKeyState((INT)KeyCodes::DOWN_ARROW))
+                            if (IsKeyPressed(bindings.rotate_down))
                             {
-                                currentFigure.rotateDown();
+                                currentFigure.RotateDown();
 
-                                if (!checkCollisions(currentFigure, gameStack, KeyCodes::DOWN_ARROW))
+                                if (!CheckCollisions(currentFigure, gameStack, KeyCodes::DOWN_ARROW))
                                 {
-                                    currentFigure.action(Actions::ROTATE);
+                                    currentFigure.Action(Actions::ROTATE);
                                 }
                                 else
                                 {
-                                    currentFigure.action(Actions::DEFAULT);
+                                    currentFigure.Action(Actions::DEFAULT);
                                 }
 
-                                createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                             }
                             else
                             {
-                                if (GetAsyncKeyState((INT)KeyCodes::SPACE))
+                                if (IsKeyPressed(bindings.hard_drop))
                                 {
                                     if (line < 19)
                                     {
-                                        currentFigure.shiftDown();
+                                        currentFigure.ShiftDown();
 
-                                        if (!checkCollisions(currentFigure, gameStack, KeyCodes::SPACE))
+                                        if (!CheckCollisions(currentFigure, gameStack, KeyCodes::SPACE))
                                         {
-                                            currentFigure.action(Actions::DOWN);
+                                            currentFigure.Action(Actions::DOWN);
 
                                             if (line == 18)
                                             {
-                                                setFigure(currentFigure, gameStack);
-                                                currentFigure.setUse(false);
+                                                SetFigure(currentFigure, gameStack);
+                                                currentFigure.SetUse(false);
                                             }
                                         }
                                         else
                                         {
-                                            setFigure(currentFigure, gameStack);
+                                            SetFigure(currentFigure, gameStack);
                                             line = 19;
                                             break;
                                         }
 
                                         ++line;
                                         ++stepProgress;
-                                        createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                                     }
                                 }
                                 else
                                 {
-                                    if (GetAsyncKeyState((INT)KeyCodes::ESCAPE))
+                                    if (IsKeyPressed(bindings.exit))
                                     {
-                                        switch (returnToMenu())
+                                        switch (ReturnToMenu())
                                         {
                                         case 1: return true;
                                         case 2:
                                             {
-                                                createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                                                 break;
                                             }
                                         case 3: return false;
@@ -996,34 +905,34 @@ bool playGame()
 
             if (line < 19)
             {
-                currentFigure.shiftDown();
+                currentFigure.ShiftDown();
 
-                if (!checkCollisions(currentFigure, gameStack, KeyCodes::SPACE))
+                if (!CheckCollisions(currentFigure, gameStack, KeyCodes::SPACE))
                 {
-                    currentFigure.action(Actions::DOWN);
+                    currentFigure.Action(Actions::DOWN);
 
                     if (line == 18)
                     {
-                        setFigure(currentFigure, gameStack);
-                        currentFigure.setUse(false);
+                        SetFigure(currentFigure, gameStack);
+                        currentFigure.SetUse(false);
                     }
                 }
                 else
                 {
-                    setFigure(currentFigure, gameStack);
+                    SetFigure(currentFigure, gameStack);
                     line = 19;
                     break;
                 }
             }
 
-            createGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
         }
 
-        nextFigure.setUse(false);
+        nextFigure.SetUse(false);
     }
 }
 
-void clearKeyboardBuffer()
+void ClearKeyboardBuffer()
 {
     while (_kbhit())
     {
@@ -1031,7 +940,7 @@ void clearKeyboardBuffer()
     }
 }
 
-bool checkGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack)
+bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack)
 {
     for (std::size_t i = 0; i < 3; ++i)
     {
@@ -1047,7 +956,7 @@ bool checkGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStac
     return false;
 }
 
-void clearLines
+void ClearLines
 (
     std::vector<std::vector<std::pair<int, int>>> &gameStack
     , const Figure &nextFigure
@@ -1088,20 +997,17 @@ void clearLines
                 mask & 4 ? gameField[i + 1].first[CURRENT_X1 + j] = L' ' : L'i';
                 mask & 2 ? gameField[i + 2].first[CURRENT_X1 + j] = L' ' : L'i';
                 mask & 1 ? gameField[i + 3].first[CURRENT_X1 + j] = L' ' : L'i';
-                viewGameField(gameField);
+                ViewGameField(gameField);
             }
 
-            switch (((mask & 8) >> 3) + ((mask & 4) >> 2) + ((mask & 2) >> 1) + (mask & 1))
-            {
-            case 4:
-                score += 4 * level;
-            case 3:
-                score += 3 * level;
-            case 2:
-                score += 2 * level;
-            case 1:
-                score += 1 * level;
-            }
+            // Кумулятивный подсчёт очков:
+            // чем больше линий очищено, тем выше базовый счёт:
+            // 4 линии = 10 очков, 3 линии = 6, 2 линии = 3, 1 линия = 1;
+            // результат умножается на текущий уровень.
+            // Таблица: индекс = количество очищенных линий.
+            const unsigned int LINES_SCORE_TABLE[5] = { 0, 1, 3, 6, 10 };
+            unsigned int clearedLines = ((mask & 0x8) >> 3) + ((mask & 0x4) >> 2) + ((mask & 0x2) >> 1) + (mask & 1);
+            score += LINES_SCORE_TABLE[clearedLines] * static_cast<unsigned int>(level);
 
             for (std::size_t k = gameStackSize - 1, t = k; k > 0 && t > 0; --t)
             {
@@ -1123,7 +1029,7 @@ void clearLines
     }
 }
 
-void checkScoreForLevel(const unsigned int &score, int &level)
+void CheckScoreForLevel(const unsigned int &score, int &level)
 {
     std::size_t size = LEVEL_SCORE.size();
 
@@ -1139,3 +1045,15 @@ void checkScoreForLevel(const unsigned int &score, int &level)
         }
     }
 }
+
+//void PlayMusic()
+//{
+//    sf::Music music;
+//    music.openFromFile("ode.ogg");
+//    music.play();
+//
+//    while (music.getStatus() == sf::Music::Playing)
+//    {
+//        sf::sleep(sf::milliseconds(100));
+//    }
+//}
