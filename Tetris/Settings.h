@@ -31,6 +31,12 @@ namespace Tetris
     // меняется только в меню настроек (между партиями).
     inline KeyBindings g_bindings = kDefaultBindings;
 
+    // Клавиша, назначенная на действие (удобный доступ к g_bindings).
+    inline KeyCodes KeyFor(BindingAction action) noexcept
+    {
+        return g_bindings.keys[static_cast<std::size_t>(action)];
+    }
+
     // Пара «действие -> ключ файла настроек + подпись в меню».
     // Порядок совпадает с BindingAction (см. Keys.h).
     struct BindingKey

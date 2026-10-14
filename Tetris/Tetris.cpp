@@ -3,12 +3,15 @@
 #include "Keys.h"
 #include "Settings.h"
 
+#include <random>
+
 // Точечный импорт: тянем в глобальное пространство только то, что используем,
 // а не весь namespace Tetris (как это делала бы using-директива).
 using Tetris::KeyCodes;
 using Tetris::BindingAction;
 using Tetris::IsKeyPressed;
 using Tetris::g_bindings;
+using Tetris::KeyFor;
 using Tetris::LoadBindings;
 using Tetris::ConfigureBindings;
 
@@ -16,6 +19,31 @@ enum class Actions
 {
     LEFT, RIGHT, DOWN, ROTATE, DEFAULT
 };
+
+// Направление «пробного» движения фигуры (для проверки столкновений).
+enum class MoveDirection
+{
+    Left, Right, RotateUp, RotateDown, Drop
+};
+
+// Результат сдвига фигуры на ряд вниз.
+enum class FallResult
+{
+    Fell,   // фигура упала на ряд
+    Locked  // фигура зафиксирована в стеке
+};
+
+// Результат меню «возврат в меню» (значения совпадают с пунктами меню).
+enum class MenuResult
+{
+    Restart = 1, // Новая игра
+    Stay    = 2, // Продолжить
+    Quit    = 3  // Выход
+};
+
+// Ряды падения фигуры: 0..LAST_FALL_LINE (всего MAX_FALL_LINES).
+constexpr int MAX_FALL_LINES = 19;
+constexpr int LAST_FALL_LINE = MAX_FALL_LINES - 1;
 
 enum class Colors
 {
@@ -283,17 +311,22 @@ public:
     bool GetUse() const { return isUse; }
 };
 
-HANDLE hBasicBuffer;
-HANDLE hDoubleBuffer;
-SMALL_RECT bufferRect;
-CHAR_INFO buffer[2000];
-COORD bufferSize;
-COORD bufferCoord;
-BOOL fSuccess;
-HWND hWnd;
-RECT currentRect, basicRect;
-CONSOLE_SCREEN_BUFFER_INFO csbi;
-CONSOLE_FONT_INFOEX fontInfo;
+// Всё, что нужно для работы с двумя буферами консоли (двойная буферизация).
+// Единственный экземпляр — g_console; инициализируется в ProgramSettings().
+struct ConsoleRenderer
+{
+    HANDLE basicBuffer = INVALID_HANDLE_VALUE;   // основной (видимый) буфер
+    HANDLE doubleBuffer = INVALID_HANDLE_VALUE;  // резервный буфер для отрисовки
+    HWND hWnd = nullptr;                         // окно консоли
+    RECT basicRect;                              // размеры окна в момент инициализации
+    CONSOLE_SCREEN_BUFFER_INFO csbi;             // информация о буфере (используется в DoubleBufferingBegin)
+    SMALL_RECT bufferRect;                       // область копирования между буферами
+    COORD bufferSize;                            // размер области копирования
+    COORD bufferCoord;                           // начальная точка копирования
+    CHAR_INFO buffer[2000];                      // область копирования (80x25)
+};
+
+ConsoleRenderer g_console;
 
 void MyErrorExit(const wchar_t *comment);
 void CreateGameField
@@ -308,12 +341,16 @@ void CreateGameField
 void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 int PositionById(int figureId);
 int StartMenu();
-int ReturnToMenu();
+MenuResult ReturnToMenu();
 void ProgramSettings();
 void DoubleBufferingBegin();
 void DoubleBufferingEnd();
 bool PlayGame();
-bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key);
+int RandomInt(int bound);
+int RandomFigureId();
+bool CheckCollisions(const Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction);
+bool TryMove(Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction, Actions commitAction);
+FallResult TryFallOneStep(Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack, int line);
 void SetFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack);
 bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack);
 void ClearKeyboardBuffer();
@@ -460,9 +497,9 @@ void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> 
         {
             if (i.first[j] == L'█')
             {
-                SetConsoleTextAttribute(hBasicBuffer, (WORD)(i.second[j]));
+                SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(i.second[j]));
                 std::wcout << i.first[j];
-                SetConsoleTextAttribute(hBasicBuffer, (WORD)(Colors::LIGHTGRAY));
+                SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(Colors::LIGHTGRAY));
             }
             else
             {
@@ -476,16 +513,29 @@ void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> 
     DoubleBufferingEnd();
 }
 
+// Случайное целое в диапазоне [0, bound).
+int RandomInt(int bound)
+{
+    static std::mt19937 rng{ std::random_device{}() };
+    std::uniform_int_distribution<int> dist(0, bound - 1);
+    return dist(rng);
+}
+
+int RandomFigureId()
+{
+    return RandomInt(static_cast<int>(FIGURES.size()));
+}
+
 int PositionById(int figureId)
 {
     switch (figureId)
     {
     case 0:case 1:case 2:
-        return rand() % 10;
+        return RandomInt(10);
     case 3:case 4:case 5:
-        return rand() % 5;
+        return RandomInt(5);
     case 6:
-        return rand() % 3;
+        return RandomInt(3);
     default:
         return -1;
     }
@@ -516,7 +566,7 @@ int StartMenu()
     }
 }
 
-int ReturnToMenu()
+MenuResult ReturnToMenu()
 {
     system("cls");
     ClearKeyboardBuffer();
@@ -540,7 +590,7 @@ int ReturnToMenu()
         }
     }
 
-    return menuItem;
+    return static_cast<MenuResult>(menuItem);
 }
 
 void MyErrorExit(const wchar_t *comment)
@@ -556,10 +606,10 @@ void ProgramSettings()
     _setmode(_fileno(stdout), _O_U16TEXT);
     srand(static_cast<unsigned>(time(NULL)));
     system("mode con cols=80 lines=25");
-    hWnd = GetConsoleWindow();
-    GetWindowRect(hWnd, &basicRect);
-    hBasicBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
-    hDoubleBuffer = CreateConsoleScreenBuffer
+    g_console.hWnd = GetConsoleWindow();
+    GetWindowRect(g_console.hWnd, &g_console.basicRect);
+    g_console.basicBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
+    g_console.doubleBuffer = CreateConsoleScreenBuffer
     (
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -568,55 +618,56 @@ void ProgramSettings()
         NULL
     );
 
-    if (hBasicBuffer == INVALID_HANDLE_VALUE ||
-        hDoubleBuffer == INVALID_HANDLE_VALUE)
+    if (g_console.basicBuffer == INVALID_HANDLE_VALUE ||
+        g_console.doubleBuffer == INVALID_HANDLE_VALUE)
     {
         MyErrorExit(L"CreateConsoleScreenBuffer");
         return;
     }
 
+    CONSOLE_FONT_INFOEX fontInfo;
     fontInfo.cbSize = sizeof(fontInfo);
-    GetCurrentConsoleFontEx(hBasicBuffer, TRUE, &fontInfo);
+    GetCurrentConsoleFontEx(g_console.basicBuffer, TRUE, &fontInfo);
     fontInfo.dwFontSize.Y = 24;
-    SetCurrentConsoleFontEx(hBasicBuffer, TRUE, &fontInfo);
-    GetCurrentConsoleFontEx(hDoubleBuffer, TRUE, &fontInfo);
+    SetCurrentConsoleFontEx(g_console.basicBuffer, TRUE, &fontInfo);
+    GetCurrentConsoleFontEx(g_console.doubleBuffer, TRUE, &fontInfo);
     fontInfo.dwFontSize.Y = 24;
-    SetCurrentConsoleFontEx(hDoubleBuffer, TRUE, &fontInfo);
+    SetCurrentConsoleFontEx(g_console.doubleBuffer, TRUE, &fontInfo);
     CONSOLE_CURSOR_INFO structCursorInfo;
-    GetConsoleCursorInfo(hDoubleBuffer, &structCursorInfo);
+    GetConsoleCursorInfo(g_console.doubleBuffer, &structCursorInfo);
     structCursorInfo.bVisible = FALSE;
-    SetConsoleCursorInfo(hDoubleBuffer, &structCursorInfo);
+    SetConsoleCursorInfo(g_console.doubleBuffer, &structCursorInfo);
 
-    GetConsoleCursorInfo(hBasicBuffer, &structCursorInfo);
+    GetConsoleCursorInfo(g_console.basicBuffer, &structCursorInfo);
     structCursorInfo.bVisible = FALSE;
-    SetConsoleCursorInfo(hBasicBuffer, &structCursorInfo);
+    SetConsoleCursorInfo(g_console.basicBuffer, &structCursorInfo);
 
     system("mode con cols=80 lines=25");
-    hWnd = GetConsoleWindow();
-    GetWindowRect(hWnd, &basicRect);
+    g_console.hWnd = GetConsoleWindow();
+    GetWindowRect(g_console.hWnd, &g_console.basicRect);
 
-    if (!SetConsoleActiveScreenBuffer(hDoubleBuffer))
+    if (!SetConsoleActiveScreenBuffer(g_console.doubleBuffer))
     {
         MyErrorExit(L"SetConsoleActiveScreenBuffer");
     }
 
-    bufferSize.Y = 25;
-    bufferSize.X = 80;
+    g_console.bufferSize.Y = 25;
+    g_console.bufferSize.X = 80;
 
-    bufferCoord.X = 0;
-    bufferCoord.Y = 0;
+    g_console.bufferCoord.X = 0;
+    g_console.bufferCoord.Y = 0;
 
-    bufferRect.Top = 0;
-    bufferRect.Left = 0;
-    bufferRect.Bottom = 24;
-    bufferRect.Right = 79;
+    g_console.bufferRect.Top = 0;
+    g_console.bufferRect.Left = 0;
+    g_console.bufferRect.Bottom = 24;
+    g_console.bufferRect.Right = 79;
 
-    fSuccess = ReadConsoleOutput(
-        hBasicBuffer,
-        buffer,
-        bufferSize,
-        bufferCoord,
-        &bufferRect);
+    BOOL fSuccess = ReadConsoleOutput(
+        g_console.basicBuffer,
+        g_console.buffer,
+        g_console.bufferSize,
+        g_console.bufferCoord,
+        &g_console.bufferRect);
 
     if (!fSuccess)
     {
@@ -625,18 +676,18 @@ void ProgramSettings()
 
 
     fSuccess = WriteConsoleOutput(
-        hDoubleBuffer,
-        buffer,
-        bufferSize,
-        bufferCoord,
-        &bufferRect);
+        g_console.doubleBuffer,
+        g_console.buffer,
+        g_console.bufferSize,
+        g_console.bufferCoord,
+        &g_console.bufferRect);
 
     if (!fSuccess)
     {
         MyErrorExit(L"WriteConsoleOutput");
     }
 
-    if (!SetConsoleActiveScreenBuffer(hBasicBuffer))
+    if (!SetConsoleActiveScreenBuffer(g_console.basicBuffer))
     {
         MyErrorExit(L"SetConsoleActiveScreenBuffer");
     }
@@ -644,22 +695,23 @@ void ProgramSettings()
 
 void DoubleBufferingBegin()
 {
-    GetWindowRect(hWnd, &currentRect);
+    RECT currentRect;
+    GetWindowRect(g_console.hWnd, &currentRect);
 
-    if (currentRect.right - currentRect.left != basicRect.right - basicRect.left
-        || currentRect.bottom - currentRect.top != basicRect.bottom - basicRect.top)
+    if (currentRect.right - currentRect.left != g_console.basicRect.right - g_console.basicRect.left
+        || currentRect.bottom - currentRect.top != g_console.basicRect.bottom - g_console.basicRect.top)
     {
-        SetConsoleScreenBufferSize(hBasicBuffer, csbi.dwSize);
-        SetConsoleScreenBufferSize(hDoubleBuffer, csbi.dwSize);
+        SetConsoleScreenBufferSize(g_console.basicBuffer, g_console.csbi.dwSize);
+        SetConsoleScreenBufferSize(g_console.doubleBuffer, g_console.csbi.dwSize);
         system("mode con cols=80 lines=25");
     }
 
-    fSuccess = ReadConsoleOutput(
-        hBasicBuffer,
-        buffer,
-        bufferSize,
-        bufferCoord,
-        &bufferRect);
+    BOOL fSuccess = ReadConsoleOutput(
+        g_console.basicBuffer,
+        g_console.buffer,
+        g_console.bufferSize,
+        g_console.bufferCoord,
+        &g_console.bufferRect);
 
     if (!fSuccess)
     {
@@ -667,21 +719,21 @@ void DoubleBufferingBegin()
     }
 
     fSuccess = WriteConsoleOutput(
-        hDoubleBuffer,
-        buffer,
-        bufferSize,
-        bufferCoord,
-        &bufferRect);
+        g_console.doubleBuffer,
+        g_console.buffer,
+        g_console.bufferSize,
+        g_console.bufferCoord,
+        &g_console.bufferRect);
 
     if (!fSuccess)
     {
         MyErrorExit(L"WriteConsoleOutput");
     }
 
-    SetConsoleActiveScreenBuffer(hDoubleBuffer);
+    SetConsoleActiveScreenBuffer(g_console.doubleBuffer);
 
-    if (currentRect.right - currentRect.left != basicRect.right - basicRect.left
-        || currentRect.bottom - currentRect.top != basicRect.bottom - basicRect.top)
+    if (currentRect.right - currentRect.left != g_console.basicRect.right - g_console.basicRect.left
+        || currentRect.bottom - currentRect.top != g_console.basicRect.bottom - g_console.basicRect.top)
     {
         system("mode con cols=80 lines=25");
     }
@@ -689,15 +741,18 @@ void DoubleBufferingBegin()
 
 void DoubleBufferingEnd()
 {
-    SetConsoleActiveScreenBuffer(hBasicBuffer);
+    SetConsoleActiveScreenBuffer(g_console.basicBuffer);
 }
 
-bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> tempGameStack, KeyCodes key)
+// Проверяет, не пересекается ли «пробная» позиция фигуры со стеком.
+// Стек не копируется и не изменяется: тетрамино не пересекает само себя,
+// поэтому достаточно проверить, занята ли уже любая из его ячеек.
+bool CheckCollisions(const Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction)
 {
-    bool isPositionNext = key == KeyCodes::UP_ARROW || key == KeyCodes::DOWN_ARROW
-        || key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
-    bool isXNext = key == KeyCodes::LEFT_ARROW || key == KeyCodes::RIGHT_ARROW;
-    bool isYNext = key == KeyCodes::SPACE && currentFigure.GetPositionY(true) != tempGameStack.size() - 3;
+    bool isXNext = direction == MoveDirection::Left || direction == MoveDirection::Right;
+    bool isYNext = direction == MoveDirection::Drop
+        && currentFigure.GetPositionY(true) != static_cast<int>(gameStack.size()) - 3;
+    bool isPositionNext = direction != MoveDirection::Drop;
     int currentFigurePositionYStart = currentFigure.GetPositionY(isYNext);
     int currentFigurePositionYFinish = currentFigure.GetPositionY(isYNext) + SIDE_SQUARE;
     int currentFigurePositionXStart = currentFigure.GetPositionX(isXNext) - CURRENT_X1;
@@ -714,10 +769,7 @@ bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::p
         {
             if (FIGURES[currentFigureId][currentFigurePosition] & shift)
             {
-                ++tempGameStack[y][x].first;
-                ++tempGameStack[y][x + 1].first;
-
-                if (tempGameStack[y][x].first > 1 || tempGameStack[y][x + 1].first > 1)
+                if (gameStack[y][x].first >= 1 || gameStack[y][x + 1].first >= 1)
                 {
                     return true;
                 }
@@ -726,6 +778,66 @@ bool CheckCollisions(const Figure &currentFigure, std::vector<std::vector<std::p
     }
 
     return false;
+}
+
+// Делает «пробное» движение фигуры, проверяет столкновение
+// и либо подтверждает его (commitAction), либо откатывает (DEFAULT).
+bool TryMove(Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction, Actions commitAction)
+{
+    switch (direction)
+    {
+    case MoveDirection::Left:
+        currentFigure.ShiftLeft();
+        break;
+    case MoveDirection::Right:
+        currentFigure.ShiftRight();
+        break;
+    case MoveDirection::RotateUp:
+        currentFigure.RotateUp();
+        break;
+    case MoveDirection::RotateDown:
+        currentFigure.RotateDown();
+        break;
+    case MoveDirection::Drop:
+        currentFigure.ShiftDown();
+        break;
+    }
+
+    if (CheckCollisions(currentFigure, gameStack, direction))
+    {
+        currentFigure.Action(Actions::DEFAULT); // откат пробного движения
+        return false;
+    }
+
+    currentFigure.Action(commitAction);
+    return true;
+}
+
+// Сдвигает фигуру на ряд вниз. Locked — фигура зафиксирована в стеке.
+FallResult TryFallOneStep(Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack, int line)
+{
+    if (line >= MAX_FALL_LINES)
+    {
+        return FallResult::Locked;
+    }
+
+    currentFigure.ShiftDown();
+
+    if (CheckCollisions(currentFigure, gameStack, MoveDirection::Drop))
+    {
+        SetFigure(currentFigure, gameStack);
+        return FallResult::Locked;
+    }
+
+    currentFigure.Action(Actions::DOWN);
+
+    if (line == LAST_FALL_LINE)
+    {
+        SetFigure(currentFigure, gameStack);
+        currentFigure.SetUse(false);
+    }
+
+    return FallResult::Fell;
 }
 
 void SetFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack)
@@ -762,10 +874,10 @@ bool PlayGame()
     int levelGame = 1;
     unsigned int score = 0;
     int stepProgress;
-    int figureId = rand() % FIGURES.size();
+    int figureId = RandomFigureId();
     int figurePosition = PositionById(figureId);
     Figure nextFigure(figureId, figurePosition);
-    figureId = rand() % FIGURES.size();
+    figureId = RandomFigureId();
     figurePosition = PositionById(figureId);
     Figure currentFigure;
     std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH + 1, { 0,0 }));
@@ -778,7 +890,7 @@ bool PlayGame()
         CheckScoreForLevel(score, levelGame);
         currentFigure = nextFigure;
         currentFigure.SetUse(true);
-        figureId = rand() % FIGURES.size();
+        figureId = RandomFigureId();
         figurePosition = PositionById(figureId);
         nextFigure.SetBasicParameters(figureId, figurePosition);
         CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
@@ -788,126 +900,60 @@ bool PlayGame()
             return true;
         }
 
-        for (int line = 0; line < 19; ++line)
+        for (int line = 0; line < MAX_FALL_LINES; ++line)
         {
             stepProgress = 0;
 
             while (stepProgress < COUNT_STEP_CHAPTER)
             {
-                if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::LEFT)]))
+                // Приоритет клавиш сохранён как в исходной версии:
+                // LEFT > RIGHT > ROTATE_UP > ROTATE_DOWN > HARD_DROP > EXIT.
+                if (IsKeyPressed(KeyFor(BindingAction::LEFT)))
                 {
-                    currentFigure.ShiftLeft();
-
-                    if (!CheckCollisions(currentFigure, gameStack, KeyCodes::LEFT_ARROW))
-                    {
-                        currentFigure.Action(Actions::LEFT);
-                    }
-                    else
-                    {
-                        currentFigure.Action(Actions::DEFAULT);
-                    }
-
+                    TryMove(currentFigure, gameStack, MoveDirection::Left, Actions::LEFT);
                     CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                 }
-                else
+                else if (IsKeyPressed(KeyFor(BindingAction::RIGHT)))
                 {
-                    if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::RIGHT)]))
+                    TryMove(currentFigure, gameStack, MoveDirection::Right, Actions::RIGHT);
+                    CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                }
+                else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_UP)))
+                {
+                    TryMove(currentFigure, gameStack, MoveDirection::RotateUp, Actions::ROTATE);
+                    CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                }
+                else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_DOWN)))
+                {
+                    TryMove(currentFigure, gameStack, MoveDirection::RotateDown, Actions::ROTATE);
+                    CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                }
+                else if (IsKeyPressed(KeyFor(BindingAction::HARD_DROP)))
+                {
+                    if (line < MAX_FALL_LINES)
                     {
-                        currentFigure.ShiftRight();
-
-                        if (!CheckCollisions(currentFigure, gameStack, KeyCodes::RIGHT_ARROW))
+                        if (TryFallOneStep(currentFigure, gameStack, line) == FallResult::Locked)
                         {
-                            currentFigure.Action(Actions::RIGHT);
-                        }
-                        else
-                        {
-                            currentFigure.Action(Actions::DEFAULT);
+                            line = MAX_FALL_LINES;
+                            break;
                         }
 
+                        ++line;
+                        ++stepProgress;
                         CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                     }
-                    else
+                }
+                else if (IsKeyPressed(KeyFor(BindingAction::EXIT)))
+                {
+                    switch (ReturnToMenu())
                     {
-                        if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::ROTATE_UP)]))
-                        {
-                            currentFigure.RotateUp();
-
-                            if (!CheckCollisions(currentFigure, gameStack, KeyCodes::UP_ARROW))
-                            {
-                                currentFigure.Action(Actions::ROTATE);
-                            }
-                            else
-                            {
-                                currentFigure.Action(Actions::DEFAULT);
-                            }
-
-                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
-                        }
-                        else
-                        {
-                            if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::ROTATE_DOWN)]))
-                            {
-                                currentFigure.RotateDown();
-
-                                if (!CheckCollisions(currentFigure, gameStack, KeyCodes::DOWN_ARROW))
-                                {
-                                    currentFigure.Action(Actions::ROTATE);
-                                }
-                                else
-                                {
-                                    currentFigure.Action(Actions::DEFAULT);
-                                }
-
-                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
-                            }
-                            else
-                            {
-                                if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::HARD_DROP)]))
-                                {
-                                    if (line < 19)
-                                    {
-                                        currentFigure.ShiftDown();
-
-                                        if (!CheckCollisions(currentFigure, gameStack, KeyCodes::SPACE))
-                                        {
-                                            currentFigure.Action(Actions::DOWN);
-
-                                            if (line == 18)
-                                            {
-                                                SetFigure(currentFigure, gameStack);
-                                                currentFigure.SetUse(false);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            SetFigure(currentFigure, gameStack);
-                                            line = 19;
-                                            break;
-                                        }
-
-                                        ++line;
-                                        ++stepProgress;
-                                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
-                                    }
-                                }
-                                else
-                                {
-                                    if (IsKeyPressed(g_bindings.keys[static_cast<std::size_t>(BindingAction::EXIT)]))
-                                    {
-                                        switch (ReturnToMenu())
-                                        {
-                                        case 1: return true;
-                                        case 2:
-                                            {
-                                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
-                                                break;
-                                            }
-                                        case 3: return false;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    case MenuResult::Restart:
+                        return true;
+                    case MenuResult::Stay:
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        break;
+                    case MenuResult::Quit:
+                        return false;
                     }
                 }
 
@@ -915,24 +961,11 @@ bool PlayGame()
                 ++stepProgress;
             }
 
-            if (line < 19)
+            if (line < MAX_FALL_LINES)
             {
-                currentFigure.ShiftDown();
-
-                if (!CheckCollisions(currentFigure, gameStack, KeyCodes::SPACE))
+                if (TryFallOneStep(currentFigure, gameStack, line) == FallResult::Locked)
                 {
-                    currentFigure.Action(Actions::DOWN);
-
-                    if (line == 18)
-                    {
-                        SetFigure(currentFigure, gameStack);
-                        currentFigure.SetUse(false);
-                    }
-                }
-                else
-                {
-                    SetFigure(currentFigure, gameStack);
-                    line = 19;
+                    line = MAX_FALL_LINES;
                     break;
                 }
             }
