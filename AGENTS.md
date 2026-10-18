@@ -13,7 +13,8 @@
 
 | Файл | Назначение |
 |---|---|
-| `Tetris/Tetris.cpp` | Вся игровая логика: цикл, рендер, двойная буферизация консоли, меню, ввод |
+| `Tetris/Tetris.cpp` | Игровая логика: цикл, рендер, двойная буферизация консоли, меню, ввод, `main()`. Вся логика (кроме `main()`) — в `namespace Tetris` |
+| `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
 | `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
 | `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32, v143) |
@@ -52,7 +53,7 @@
 - Каждый файл включает **то, что использует сам** (PCH нет). `std::size_t` требует явного `#include <cstddef>`.
 - **`using namespace` запрещён** — только точечные `using`-декларации (по одному символу на имя).
 - Нежелательные предупреждения анализа (например, C6031 «возвращаемое значение пропущено») гасить **явным приведением `(void)вызов()`** с комментарием, а не `#pragma warning(disable: ...)`.
-- Заголовки `Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`.
+- Заголовки `Game.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`.
 
 ### Форматирование: два конфига, две роли
 
