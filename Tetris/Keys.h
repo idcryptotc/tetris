@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstddef>
 #include <cstdint>
 
 #include <windows.h>
@@ -8,7 +7,8 @@
 namespace Tetris
 {
     // Виртуальные коды клавиш (VK_*), используемые для опроса состояния ввода.
-    enum class KeyCodes : uint8_t
+    enum class KeyCodes
+        : uint8_t
     {
         // Контрольные клавиши
         BACKSPACE = 8,
@@ -124,15 +124,16 @@ namespace Tetris
 
     // Действия игры, которым назначаются клавиши.
     // Порядок совпадает с порядком элементов KeyBindings::keys.
-    enum class BindingAction : unsigned char
+    enum class BindingAction
+        : unsigned char
     {
-        LEFT = 0,        // движение влево
-        RIGHT = 1,       // движение вправо
-        ROTATE_UP = 2,   // поворот (клавиша вверх)
-        ROTATE_DOWN = 3, // поворот (клавиша вниз)
-        HARD_DROP = 4,   // мгновенный сброс фигуры
-        EXIT = 5,        // возврат в меню
-        COUNT            // не действие, а количество действий
+        LEFT = 0,        // Движение влево
+        RIGHT = 1,       // Движение вправо
+        ROTATE_UP = 2,   // Поворот (клавиша вверх)
+        ROTATE_DOWN = 3, // Поворот (клавиша вниз)
+        HARD_DROP = 4,   // Мгновенный сброс фигуры
+        EXIT = 5,        // Возврат в меню
+        COUNT            // Не действие, а количество действий
     };
 
     // Набор клавиш, управляющих игрой.
@@ -150,4 +151,4 @@ namespace Tetris
     {
         return (GetAsyncKeyState(static_cast<UINT>(key)) & 0x8000) != 0;
     }
-} // namespace Tetris
+}

@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <cstddef>
 #include <string>
 #include <unordered_map>
 
@@ -8,22 +7,23 @@
 #include <windows.h>
 
 #include "Keys.h"
+#include <iostream>
 
 namespace Tetris
 {
     // Имя файла настроек (создаётся в директории запуска программы).
-    inline constexpr const wchar_t* kSettingsFileName = L"tetris_settings.ini";
+    inline constexpr const wchar_t *kSettingsFileName = L"tetris_settings.ini";
 
     // Набор клавиш по умолчанию (используется, если файла настроек нет).
     inline constexpr KeyBindings kDefaultBindings
     {
         {
-            KeyCodes::LEFT_ARROW,  // LEFT
-            KeyCodes::RIGHT_ARROW, // RIGHT
-            KeyCodes::UP_ARROW,    // ROTATE_UP
-            KeyCodes::DOWN_ARROW,  // ROTATE_DOWN
-            KeyCodes::SPACE,       // HARD_DROP
-            KeyCodes::ESCAPE       // EXIT
+            KeyCodes::LEFT_ARROW,   // LEFT
+            KeyCodes::RIGHT_ARROW,  // RIGHT
+            KeyCodes::UP_ARROW,     // ROTATE_UP
+            KeyCodes::DOWN_ARROW,   // ROTATE_DOWN
+            KeyCodes::SPACE,        // HARD_DROP
+            KeyCodes::ESCAPE,       // EXIT
         }
     };
 
@@ -42,8 +42,8 @@ namespace Tetris
     struct BindingKey
     {
         BindingAction action;
-        const wchar_t* keyName; // ключ в INI-файле
-        const wchar_t* label;   // подпись в меню настройки
+        const wchar_t *keyName; // ключ в INI-файле
+        const wchar_t *label;   // подпись в меню настройки
     };
 
     inline constexpr BindingKey kBindingKeys[]
@@ -105,27 +105,35 @@ namespace Tetris
             default: break;
         }
 
-        if (key >= KeyCodes::DIGIT_0 && key <= KeyCodes::DIGIT_9)
+        if (key >= KeyCodes::DIGIT_0
+            && key <= KeyCodes::DIGIT_9)
         {
-            return std::wstring(L"KEY_") +
-                   static_cast<wchar_t>(L'0' + static_cast<unsigned char>(key) - 48u);
+            return std::wstring(L"KEY_")
+                + static_cast<wchar_t>(L'0' + static_cast<unsigned char>(key) - 48u);
         }
-        if (key >= KeyCodes::A && key <= KeyCodes::Z)
+
+        if (key >= KeyCodes::A
+            && key <= KeyCodes::Z)
         {
-            return std::wstring(L"KEY_") +
-                   static_cast<wchar_t>(L'A' + static_cast<unsigned char>(key) - 65u);
+            return std::wstring(L"KEY_")
+                + static_cast<wchar_t>(L'A' + static_cast<unsigned char>(key) - 65u);
         }
+
         return L"UNKNOWN";
     }
 
     // Таблица «имя клавиши -> VK-код» для разбора INI-файла.
     // Строится один раз при первом обращении.
-    inline const std::unordered_map<std::wstring, int>& KeyNameTable() noexcept
+    inline const std::unordered_map<std::wstring, int> &KeyNameTable() noexcept
     {
         static const std::unordered_map<std::wstring, int> table = []
         {
             std::unordered_map<std::wstring, int> t;
-            auto add = [&t](const wchar_t* name, int vk) { t.emplace(name, vk); };
+
+            auto add = [&t](const wchar_t *name, int vk)
+            {
+                t.emplace(name, vk);
+            };
 
             add(L"BACKSPACE", 8);
             add(L"TAB", 9);
@@ -145,38 +153,63 @@ namespace Tetris
             add(L"INSERT", 45);
             add(L"DEL", 46);
             add(L"SPACE", 32);
-            add(L"NUMPAD0", 96); add(L"NUMPAD1", 97); add(L"NUMPAD2", 98);
-            add(L"NUMPAD3", 99); add(L"NUMPAD4", 100); add(L"NUMPAD5", 101);
-            add(L"NUMPAD6", 102); add(L"NUMPAD7", 103); add(L"NUMPAD8", 104);
+            add(L"NUMPAD0", 96);
+            add(L"NUMPAD1", 97);
+            add(L"NUMPAD2", 98);
+            add(L"NUMPAD3", 99);
+            add(L"NUMPAD4", 100);
+            add(L"NUMPAD5", 101);
+            add(L"NUMPAD6", 102);
+            add(L"NUMPAD7", 103);
+            add(L"NUMPAD8", 104);
             add(L"NUMPAD9", 105);
-            add(L"F1", 112); add(L"F2", 113); add(L"F3", 114); add(L"F4", 115);
-            add(L"F5", 116); add(L"F6", 117); add(L"F7", 118); add(L"F8", 119);
-            add(L"F9", 120); add(L"F10", 121); add(L"F11", 122); add(L"F12", 123);
+            add(L"F1", 112);
+            add(L"F2", 113);
+            add(L"F3", 114);
+            add(L"F4", 115);
+            add(L"F5", 116);
+            add(L"F6", 117);
+            add(L"F7", 118);
+            add(L"F8", 119);
+            add(L"F9", 120);
+            add(L"F10", 121);
+            add(L"F11", 122);
+            add(L"F12", 123);
 
             for (int i = 0; i < 10; ++i)
             {
-                t.emplace(std::wstring(L"KEY_") + static_cast<wchar_t>('0' + i), '0' + i);
+                t.emplace(
+                    std::wstring(L"KEY_") + static_cast<wchar_t>('0' + i),
+                    '0' + i);
             }
+
             for (int i = 0; i < 26; ++i)
             {
-                t.emplace(std::wstring(L"KEY_") + static_cast<wchar_t>('A' + i), 'A' + i);
+                t.emplace(
+                    std::wstring(L"KEY_") + static_cast<wchar_t>('A' + i),
+                    'A' + i);
             }
+
             return t;
         }();
+
         return table;
     }
 
     // Код клавиши по имени из файла настроек; -1, если имя не распознано.
-    inline int KeyFromName(const std::wstring& name) noexcept
+    inline int KeyFromName(const std::wstring &name) noexcept
     {
-        const auto& table = KeyNameTable();
+        const auto &table = KeyNameTable();
         auto it = table.find(name);
-        return it == table.end() ? -1 : it->second;
+
+        return it == table.end()
+            ? -1
+            : it->second;
     }
 
     // Загружает настройки из INI-файла; отсутствующие или некорректные
     // значения заменяются значениями по умолчанию.
-    inline void LoadBindings(KeyBindings& bindings)
+    inline void LoadBindings(KeyBindings &bindings)
     {
         for (std::size_t i = 0; i < static_cast<std::size_t>(BindingAction::COUNT); ++i)
         {
@@ -187,15 +220,17 @@ namespace Tetris
             }
 
             wchar_t buffer[64] = {};
+
             if (GetPrivateProfileStringW(
-                    L"Bindings",
-                    kBindingKeys[i].keyName,
-                    L"",
-                    buffer,
-                    static_cast<UINT>(sizeof(buffer) / sizeof(buffer[0])),
-                    kSettingsFileName) > 0)
+                L"Bindings",
+                kBindingKeys[i].keyName,
+                L"",
+                buffer,
+                static_cast<UINT>(sizeof(buffer) / sizeof(buffer[0])),
+                kSettingsFileName) > 0)
             {
                 int code = KeyFromName(buffer);
+
                 if (code > 0)
                 {
                     bindings.keys[i] = static_cast<KeyCodes>(code);
@@ -205,19 +240,20 @@ namespace Tetris
     }
 
     // Сохраняет настройки в INI-файл (создаёт/перезаписывает).
-    inline bool SaveBindings(const KeyBindings& bindings)
+    inline bool SaveBindings(const KeyBindings &bindings)
     {
         for (std::size_t i = 0; i < static_cast<std::size_t>(BindingAction::COUNT); ++i)
         {
             if (WritePrivateProfileStringW(
-                    L"Bindings",
-                    kBindingKeys[i].keyName,
-                    KeyName(bindings.keys[i]).c_str(),
-                    kSettingsFileName) == 0)
+                L"Bindings",
+                kBindingKeys[i].keyName,
+                KeyName(bindings.keys[i]).c_str(),
+                kSettingsFileName) == 0)
             {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -259,15 +295,20 @@ namespace Tetris
                 case VK_LWIN:
                 case VK_RWIN:
                 case VK_SELECT:
-                    return false;
+                    {
+                        return false;
+                    }
                 default:
-                    return true;
+                    {
+                        return true;
+                    }
             }
         };
 
         // Снимок клавиш, уже удерживаемых в момент запроса:
         // они не должны считаться ответом.
         bool wasPressed[256] = {};
+
         for (UINT vk = 0; vk < 256; ++vk)
         {
             if (isBindable(vk))
@@ -288,10 +329,12 @@ namespace Tetris
 
             for (UINT vk = 1; vk < 256; ++vk)
             {
-                if (!isBindable(vk) || wasPressed[vk])
+                if (!isBindable(vk)
+                    || wasPressed[vk])
                 {
                     continue;
                 }
+
                 if ((GetAsyncKeyState(static_cast<INT>(vk)) & 0x8000) != 0)
                 {
                     // Захваченное нажатие остаётся в буфере ввода консоли;
@@ -308,48 +351,73 @@ namespace Tetris
     // Интерактивная настройка клавиш: по очереди запрашивает
     // новую клавишу для каждого действия.
     // Возвращает true, если изменения были сохранены.
-    inline bool ConfigureBindings(KeyBindings& bindings)
+    inline bool ConfigureBindings(KeyBindings &bindings)
     {
-        std::wcout << L"Настройка клавиш" << std::endl;
-        std::wcout << L"==================" << std::endl;
+        std::wcout
+            << L"Настройка клавиш"
+            << std::endl;
+
+        std::wcout
+            << L"=================="
+            << std::endl;
 
         bool changed = false;
 
         for (std::size_t i = 0; i < static_cast<std::size_t>(BindingAction::COUNT); ++i)
         {
-            std::wcout << L"\n" << kBindingKeys[i].label << L": "
-                       << KeyName(bindings.keys[i]) << std::endl;
+            std::wcout
+                << L"\n"
+                << kBindingKeys[i].label
+                << L": "
+                << KeyName(bindings.keys[i])
+                << std::endl;
 
             // Выход в меню всегда на ESC: он зарезервирован под отмену
             // в самом меню настроек, поэтому переназначению не подлежит.
             if (kBindingKeys[i].action == BindingAction::EXIT)
             {
-                std::wcout << L"  (закреплена за ESC, не переназначается)" << std::endl;
+                std::wcout
+                    << L"  (закреплена за ESC, не переназначается)"
+                    << std::endl;
+
                 continue;
             }
 
             unsigned vk = CaptureKey();
+
             if (vk == 0)
             {
-                std::wcout << L"  (без изменений)" << std::endl;
+                std::wcout
+                    << L"  (без изменений)"
+                    << std::endl;
+
                 continue;
             }
 
             KeyCodes newKey = static_cast<KeyCodes>(vk);
+
             if (newKey == bindings.keys[i])
             {
-                std::wcout << L"  (без изменений)" << std::endl;
+                std::wcout
+                    << L"  (без изменений)"
+                    << std::endl;
+
                 continue;
             }
 
             // Одна клавиша не может быть назначена на два действия.
             bool conflict = false;
+
             for (std::size_t j = 0; j < static_cast<std::size_t>(BindingAction::COUNT); ++j)
             {
-                if (j != i && bindings.keys[j] == newKey)
+                if (j != i
+                    && bindings.keys[j] == newKey)
                 {
-                    std::wcout << L"  ! Клавиша уже назначена: "
-                               << kBindingKeys[j].label << std::endl;
+                    std::wcout
+                        << L"  ! Клавиша уже назначена: "
+                        << kBindingKeys[j].label
+                        << std::endl;
+
                     conflict = true;
                     break;
                 }
@@ -359,33 +427,55 @@ namespace Tetris
             {
                 bindings.keys[i] = newKey;
                 changed = true;
-                std::wcout << L"  -> " << KeyName(newKey) << std::endl;
+
+                std::wcout
+                    << L"  -> "
+                    << KeyName(newKey)
+                    << std::endl;
             }
         }
 
         if (!changed)
         {
-            std::wcout << L"\nИзменений нет." << std::endl;
+            std::wcout
+                << L"\nИзменений нет."
+                << std::endl;
+
             return false;
         }
 
         // Подтверждение через Enter/Esc — не зависит от раскладки клавиатуры
         // (в отличие от латинских Y/N, которые при ЙЦУКЕН превращаются в н/т).
-        std::wcout << L"\nСохранить изменения? (Enter - да, Esc - нет): ";
+        std::wcout
+            << L"\nСохранить изменения? (Enter - да, Esc - нет): ";
+
         int c = _getch();
-        if (c == 13) // Enter
+
+        // Enter
+        if (c == 13)
         {
             if (SaveBindings(bindings))
             {
-                std::wcout << L"Сохранено в " << kSettingsFileName << std::endl;
+                std::wcout
+                    << L"Сохранено в "
+                    << kSettingsFileName
+                    << std::endl;
+
                 return true;
             }
-            std::wcout << L"Ошибка сохранения." << std::endl;
+
+            std::wcout
+                << L"Ошибка сохранения."
+                << std::endl;
         }
-        else // Esc (27) или любая другая клавиша
+        // Esc (27) или любая другая клавиша
+        else
         {
-            std::wcout << L"Изменения отменены." << std::endl;
+            std::wcout
+                << L"Изменения отменены."
+                << std::endl;
         }
+
         return false;
     }
-} // namespace Tetris
+}

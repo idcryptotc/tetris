@@ -4,6 +4,18 @@
 #include "Settings.h"
 
 #include <random>
+#include <map>
+#include <vector>
+#include <string>
+#include <utility>
+#include <cstdlib>
+#include <iostream>
+#include <conio.h>
+#include <fcntl.h>
+#include <io.h>
+#include <cstdio>
+#include <ctime>
+#include <Windows.h>
 
 // Точечный импорт: тянем в глобальное пространство только то, что используем,
 // а не весь namespace Tetris (как это делала бы using-директива).
@@ -37,8 +49,8 @@ enum class FallResult
 enum class MenuResult
 {
     Restart = 1, // Новая игра
-    Stay    = 2, // Продолжить
-    Quit    = 3  // Выход
+    Stay = 2, // Продолжить
+    Quit = 3  // Выход
 };
 
 // Ряды падения фигуры: 0..LAST_FALL_LINE (всего MAX_FALL_LINES).
@@ -69,6 +81,7 @@ const int SHIFT_MULTIPLIER = 2;
 const int SIDE_SQUARE = 4;
 const int WIDTH = 10 * SHIFT_MULTIPLIER, HEIGHT = 22;
 const int BASIC_X = 12, BASIC_Y = 0;
+
 const std::vector<unsigned int> LEVEL_TIME_STEP
 {
     500,480,460,440,420,
@@ -77,6 +90,7 @@ const std::vector<unsigned int> LEVEL_TIME_STEP
     200,180,160,140,120,
     100,80,60,40,20
 };
+
 const std::vector<unsigned int> LEVEL_SCORE
 {
     0,50,100,150,200,
@@ -85,6 +99,7 @@ const std::vector<unsigned int> LEVEL_SCORE
     2000,2300,2600,2900,3200,
     4000,5000,6000,7000,8000
 };
+
 const int COUNT_STEP_CHAPTER = 8;
 const int NEXT_X1 = 31, NEXT_X2 = 38, NEXT_Y1 = 1, NEXT_Y2 = 4;
 const int CURRENT_X1 = 6, CURRENT_X2 = 25, CURRENT_Y1 = 3, CURRENT_Y2 = 21;
@@ -93,96 +108,96 @@ const int LEVEL_X = 40, LEVEL_Y = 9;
 
 const std::vector<std::vector<unsigned short>> FIGURES =
 {
-    {0x088c,0x0446,0x0223,0x002e,0x0017,0x0c44,0x0622,0x0311,0x00e8,0x0074},
-    {0x044c,0x0226,0x0113,0x008e,0x0047,0x0c88,0x0644,0x0322,0x00e2,0x0071},
-    {0x08c8,0x0464,0x0232,0x004e,0x0027,0x04c4,0x0262,0x0131,0x00e4,0x0072},
-    {0x08c4,0x0462,0x0231,0x006c,0x0036},
-    {0x04c8,0x0264,0x0132,0x00c6,0x0063},
-    {0x8888,0x4444,0x2222,0x1111,0x000f},
-    {0x00cc,0x0066,0x0033}
+    { 0x088c,0x0446,0x0223,0x002e,0x0017,0x0c44,0x0622,0x0311,0x00e8,0x0074 },
+    { 0x044c,0x0226,0x0113,0x008e,0x0047,0x0c88,0x0644,0x0322,0x00e2,0x0071 },
+    { 0x08c8,0x0464,0x0232,0x004e,0x0027,0x04c4,0x0262,0x0131,0x00e4,0x0072 },
+    { 0x08c4,0x0462,0x0231,0x006c,0x0036 },
+    { 0x04c8,0x0264,0x0132,0x00c6,0x0063 },
+    { 0x8888,0x4444,0x2222,0x1111,0x000f },
+    { 0x00cc,0x0066,0x0033 }
 };
 
 const std::map<int, Colors> FIGURE_COLORS
 {
-    {0,Colors::CYAN},
-    {1,Colors::LIGHTBLUE},
-    {2,Colors::LIGHTGREEN},
-    {3,Colors::MAGENTA},
-    {4,Colors::LIGHTRED},
-    {5,Colors::YELLOW},
-    {6,Colors::DARKGRAY}
+    { 0,Colors::CYAN },
+    { 1,Colors::LIGHTBLUE },
+    { 2,Colors::LIGHTGREEN },
+    { 3,Colors::MAGENTA },
+    { 4,Colors::LIGHTRED },
+    { 5,Colors::YELLOW },
+    { 6,Colors::DARKGRAY }
 };
 
 const std::vector<std::map<int, int>> NEXT_POSITION_LEFT
 {
-    {{1,0},{2,1},{4,3},{6,5},{7,6},{9,8}},
-    {{1,0},{2,1},{4,3},{6,5},{7,6},{9,8}},
-    {{1,0},{2,1},{4,3},{6,5},{7,6},{9,8}},
-    {{1,0},{2,1},{4,3}},
-    {{1,0},{2,1},{4,3}},
-    {{1,0},{2,1},{3,2}},
-    {{1,0},{2,1}}
+    { { 1,0 },{ 2,1 },{ 4,3 },{ 6,5 },{ 7,6 },{ 9,8 } },
+    { { 1,0 },{ 2,1 },{ 4,3 },{ 6,5 },{ 7,6 },{ 9,8 } },
+    { { 1,0 },{ 2,1 },{ 4,3 },{ 6,5 },{ 7,6 },{ 9,8 } },
+    { { 1,0 },{ 2,1 },{ 4,3 } },
+    { { 1,0 },{ 2,1 },{ 4,3 } },
+    { { 1,0 },{ 2,1 },{ 3,2 } },
+    { { 1,0 },{ 2,1 } }
 };
 
 const std::vector<std::map<int, int>> NEXT_POSITION_RIGHT
 {
-    {{0,1},{1,2},{3,4},{5,6},{6,7},{8,9}},
-    {{0,1},{1,2},{3,4},{5,6},{6,7},{8,9}},
-    {{0,1},{1,2},{3,4},{5,6},{6,7},{8,9}},
-    {{0,1},{1,2},{3,4}},
-    {{0,1},{1,2},{3,4}},
-    {{0,1},{1,2},{2,3}},
-    {{0,1},{1,2}}
+    { { 0,1 },{ 1,2 },{ 3,4 },{ 5,6 },{ 6,7 },{ 8,9 } },
+    { { 0,1 },{ 1,2 },{ 3,4 },{ 5,6 },{ 6,7 },{ 8,9 } },
+    { { 0,1 },{ 1,2 },{ 3,4 },{ 5,6 },{ 6,7 },{ 8,9 } },
+    { { 0,1 },{ 1,2 },{ 3,4 } },
+    { { 0,1 },{ 1,2 },{ 3,4 } },
+    { { 0,1 },{ 1,2 },{ 2,3 } },
+    { { 0,1 },{ 1,2 } }
 };
 
 const std::vector<std::map<int, int>> NEXT_POSITION_ROTATE_UP
 {
-    {{0,3},{1,3},{2,4},{3,5},{4,7},{5,8},{6,8},{7,9},{8,0},{9,2}},
-    {{0,3},{1,3},{2,4},{3,5},{4,7},{5,8},{6,8},{7,9},{8,0},{9,2}},
-    {{0,3},{1,3},{2,4},{3,5},{4,7},{5,8},{6,8},{7,9},{8,0},{9,2}},
-    {{0,3},{1,3},{2,4},{3,0},{4,2}},
-    {{0,3},{1,3},{2,4},{3,0},{4,2}},
-    {{0,4},{1,4},{2,4},{3,4},{4,2}},
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,5 },{ 4,7 },{ 5,8 },{ 6,8 },{ 7,9 },{ 8,0 },{ 9,2 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,5 },{ 4,7 },{ 5,8 },{ 6,8 },{ 7,9 },{ 8,0 },{ 9,2 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,5 },{ 4,7 },{ 5,8 },{ 6,8 },{ 7,9 },{ 8,0 },{ 9,2 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,0 },{ 4,2 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,0 },{ 4,2 } },
+    { { 0,4 },{ 1,4 },{ 2,4 },{ 3,4 },{ 4,2 } },
     {}
 };
 
 const std::vector<std::map<int, int>> NEXT_POSITION_ROTATE_DOWN
 {
-    {{0,8},{1,8},{2,9},{3,0},{4,2},{5,3},{6,3},{7,4},{8,5},{9,7}},
-    {{0,8},{1,8},{2,9},{3,0},{4,2},{5,3},{6,3},{7,4},{8,5},{9,7}},
-    {{0,8},{1,8},{2,9},{3,0},{4,2},{5,3},{6,3},{7,4},{8,5},{9,7}},
-    {{0,3},{1,3},{2,4},{3,0},{4,2}},
-    {{0,3},{1,3},{2,4},{3,0},{4,2}},
-    {{0,4},{1,4},{2,4},{3,4},{4,0}},
+    { { 0,8 },{ 1,8 },{ 2,9 },{ 3,0 },{ 4,2 },{ 5,3 },{ 6,3 },{ 7,4 },{ 8,5 },{ 9,7 } },
+    { { 0,8 },{ 1,8 },{ 2,9 },{ 3,0 },{ 4,2 },{ 5,3 },{ 6,3 },{ 7,4 },{ 8,5 },{ 9,7 } },
+    { { 0,8 },{ 1,8 },{ 2,9 },{ 3,0 },{ 4,2 },{ 5,3 },{ 6,3 },{ 7,4 },{ 8,5 },{ 9,7 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,0 },{ 4,2 } },
+    { { 0,3 },{ 1,3 },{ 2,4 },{ 3,0 },{ 4,2 } },
+    { { 0,4 },{ 1,4 },{ 2,4 },{ 3,4 },{ 4,0 } },
     {}
 };
 
 const std::vector<std::pair<std::wstring, std::vector<int>>> GAME_FIELD
 {
-    {{L"                              ┌────────┐     "},std::vector<int>(45, 0)},
-    {{L"                              │        │     "},std::vector<int>(45, 0)},
-    {{L"                              │        │     "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║   │        │     "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║   │        │     "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║   └────────┘     "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║  Score 000000    "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║  Level     01    "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║  ESC - Выход     "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║                  "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║  ↓ ↑ - Rotate    "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║ SPACE - MegaDown "},std::vector<int>(45, 0)},
-    {{L"     ║                    ║   ←  - Left      "},std::vector<int>(45, 0)},
-    {{L"     ╚════════════════════╝   →  - Right     "},std::vector<int>(45, 0)},
-    {{L"                                             "},std::vector<int>(45, 0)}
+    { { L"                              ┌────────┐     " }, std::vector<int>(45, 0) },
+    { { L"                              │        │     " }, std::vector<int>(45, 0) },
+    { { L"                              │        │     " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║   │        │     " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║   │        │     " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║   └────────┘     " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║  Score 000000    " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║  Level     01    " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║  ESC - Выход     " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║  ↓ ↑ - Rotate    " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║ SPACE - MegaDown " }, std::vector<int>(45, 0) },
+    { { L"     ║                    ║   ←  - Left      " }, std::vector<int>(45, 0) },
+    { { L"     ╚════════════════════╝   →  - Right     " }, std::vector<int>(45, 0) },
+    { { L"                                             " }, std::vector<int>(45, 0) },
 };
 
 class Figure
@@ -220,7 +235,10 @@ public:
         isUse = true;
     }
 
-    void SetPosition(int figurePosition) { position = figurePosition; }
+    void SetPosition(int figurePosition)
+    {
+        position = figurePosition;
+    }
 
     void ShiftRight()
     {
@@ -252,7 +270,10 @@ public:
         }
     }
 
-    void ShiftDown() { nextY = y + 1; }
+    void ShiftDown()
+    {
+        nextY = y + 1;
+    }
 
     void RotateUp()
     {
@@ -270,74 +291,103 @@ public:
         }
     }
 
-    int GetPositionX(bool isNext = false) const { return isNext ? nextX : x; }
+    int GetPositionX(bool isNext = false) const
+    {
+        return isNext
+            ? nextX
+            : x;
+    }
 
-    int GetPositionY(bool isNext = false) const { return isNext ? nextY : y; }
+    int GetPositionY(bool isNext = false) const
+    {
+        return isNext
+            ? nextY
+            : y;
+    }
 
-    int GetId() const { return id; }
+    int GetId() const
+    {
+        return id;
+    }
 
-    int GetColorAsInt() const { return (int)color; }
+    int GetColorAsInt() const
+    {
+        return (int)color;
+    }
 
-    int GetPosition(bool isNext = false) const { return isNext ? nextPosition : position; }
+    int GetPosition(bool isNext = false) const
+    {
+        return isNext
+            ? nextPosition
+            : position;
+    }
 
     void Action(Actions action)
     {
         switch (action)
         {
-        case Actions::LEFT:
-            x = nextX;
-            position = nextPosition;
-            break;
-        case Actions::RIGHT:
-            x = nextX;
-            position = nextPosition;
-            break;
-        case Actions::DOWN:
-            y = nextY > 18 ? 18 : nextY;
-            break;
-        case Actions::ROTATE:
-            position = nextPosition;
-            break;
-        case Actions::DEFAULT:
-            break;
+            case Actions::LEFT:
+                x = nextX;
+                position = nextPosition;
+                break;
+            case Actions::RIGHT:
+                x = nextX;
+                position = nextPosition;
+                break;
+            case Actions::DOWN:
+                y = nextY > 18 ? 18 : nextY;
+                break;
+            case Actions::ROTATE:
+                position = nextPosition;
+                break;
+            case Actions::DEFAULT:
+                break;
         }
 
         nextX = x;
         nextY = (y + 1) > 18 ? 18 : y + 1;
     }
 
-    void SetUse(bool state) { isUse = state; }
+    void SetUse(bool state)
+    {
+        isUse = state;
+    }
 
-    bool GetUse() const { return isUse; }
+    bool GetUse() const
+    {
+        return isUse;
+    }
 };
 
 // Всё, что нужно для работы с двумя буферами консоли (двойная буферизация).
 // Единственный экземпляр — g_console; инициализируется в ProgramSettings().
 struct ConsoleRenderer
 {
-    HANDLE basicBuffer = INVALID_HANDLE_VALUE;   // основной (видимый) буфер
-    HANDLE doubleBuffer = INVALID_HANDLE_VALUE;  // резервный буфер для отрисовки
-    HWND hWnd = nullptr;                         // окно консоли
-    RECT basicRect;                              // размеры окна в момент инициализации
-    CONSOLE_SCREEN_BUFFER_INFO csbi;             // информация о буфере (используется в DoubleBufferingBegin)
-    SMALL_RECT bufferRect;                       // область копирования между буферами
-    COORD bufferSize;                            // размер области копирования
-    COORD bufferCoord;                           // начальная точка копирования
-    CHAR_INFO buffer[2000];                      // область копирования (80x25)
+    HANDLE basicBuffer{ INVALID_HANDLE_VALUE };     // Основной (видимый) буфер
+    HANDLE doubleBuffer{ INVALID_HANDLE_VALUE };    // Резервный буфер для отрисовки
+    HWND hWnd{ nullptr };                           // Окно консоли
+    RECT basicRect{};                               // Размеры окна в момент инициализации
+    CONSOLE_SCREEN_BUFFER_INFO csbi{};              // Информация о буфере (используется в DoubleBufferingBegin)
+    SMALL_RECT bufferRect{};                        // Область копирования между буферами
+    COORD bufferSize{};                             // Размер области копирования
+    COORD bufferCoord{};                            // Начальная точка копирования
+    CHAR_INFO buffer[2000]{};                       // Область копирования (80x25)
 };
 
 ConsoleRenderer g_console;
 
 void MyErrorExit(const wchar_t *comment);
+
 void CreateGameField
 (
-    const Figure &nextFigure
-    , const Figure &currentFigure
-    , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
-    , const std::vector<std::vector<int>> &gameStack
-    , const unsigned int &score
-    , const int &level
+    const Figure &nextFigure,
+    const Figure &currentFigure,
+    std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+    const std::vector<std::vector<int>> &gameStack,
+    const unsigned int &score,
+    const int &level
 );
+
 void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 int PositionById(int figureId);
 int StartMenu();
@@ -354,28 +404,31 @@ FallResult TryFallOneStep(Figure &currentFigure, std::vector<std::vector<std::pa
 void SetFigure(const Figure &currentFigure, std::vector<std::vector<std::pair<int, int>>> &gameStack);
 bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack);
 void ClearKeyboardBuffer();
+
 void ClearLines
 (
-    std::vector<std::vector<std::pair<int, int>>> &gameStack
-    , const Figure &nextFigure
-    , unsigned int &score
-    , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
-    , const int &level
+    std::vector<std::vector<std::pair<int, int>>> &gameStack,
+    const Figure &nextFigure,
+    unsigned int &score,
+    std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+    const int &level
 );
+
 void CheckScoreForLevel(const unsigned int &score, int &level);
-void PlayMusic();
+//void PlayMusic();
 
 int main()
 {
     ProgramSettings();
 
-    LoadBindings(g_bindings); // настройки клавиш из tetris_settings.ini
+    // Настройки клавиш из tetris_settings.ini
+    LoadBindings(g_bindings);
 
     while (true)
     {
         system("cls");
-
         int menuItem = StartMenu();
+
         if (menuItem == 3)
         {
             return 0; // Выход
@@ -384,13 +437,14 @@ int main()
         if (menuItem == 2)
         {
             ConfigureBindings(g_bindings);
-            continue; // вернуться в меню, а не сразу в игру
+            continue; // Вернуться в меню, а не сразу в игру
         }
 
         if (!PlayGame())
         {
-            break; // выбранный в игре «Выход»
+            break; // Выбранный в игре «Выход»
         }
+
         // PlayGame() вернул true — конец партии, предлагаем сыграть снова
     }
 
@@ -399,12 +453,12 @@ int main()
 
 void CreateGameField
 (
-    const Figure &nextFigure
-    , const Figure &currentFigure
-    , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
-    , const std::vector<std::vector<std::pair<int, int>>> &gameStack
-    , const unsigned int &score
-    , const int &level
+    const Figure &nextFigure,
+    const Figure &currentFigure,
+    std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+    const std::vector<std::vector<std::pair<int, int>>> &gameStack,
+    const unsigned int &score,
+    const int &level
 )
 {
     int idFigure = nextFigure.GetId();
@@ -530,14 +584,22 @@ int PositionById(int figureId)
 {
     switch (figureId)
     {
-    case 0:case 1:case 2:
-        return RandomInt(10);
-    case 3:case 4:case 5:
-        return RandomInt(5);
-    case 6:
-        return RandomInt(3);
-    default:
-        return -1;
+        case 0:case 1:case 2:
+            {
+                return RandomInt(10);
+            }
+        case 3:case 4:case 5:
+            {
+                return RandomInt(5);
+            }
+        case 6:
+            {
+                return RandomInt(3);
+            }
+        default:
+            {
+                return -1;
+            }
     }
 }
 
@@ -609,6 +671,7 @@ void ProgramSettings()
     g_console.hWnd = GetConsoleWindow();
     GetWindowRect(g_console.hWnd, &g_console.basicRect);
     g_console.basicBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
+
     g_console.doubleBuffer = CreateConsoleScreenBuffer
     (
         GENERIC_READ | GENERIC_WRITE,
@@ -625,15 +688,19 @@ void ProgramSettings()
         return;
     }
 
-    CONSOLE_FONT_INFOEX fontInfo;
+    CONSOLE_FONT_INFOEX fontInfo{};
     fontInfo.cbSize = sizeof(fontInfo);
+
     GetCurrentConsoleFontEx(g_console.basicBuffer, TRUE, &fontInfo);
     fontInfo.dwFontSize.Y = 24;
     SetCurrentConsoleFontEx(g_console.basicBuffer, TRUE, &fontInfo);
+
     GetCurrentConsoleFontEx(g_console.doubleBuffer, TRUE, &fontInfo);
     fontInfo.dwFontSize.Y = 24;
     SetCurrentConsoleFontEx(g_console.doubleBuffer, TRUE, &fontInfo);
+
     CONSOLE_CURSOR_INFO structCursorInfo;
+
     GetConsoleCursorInfo(g_console.doubleBuffer, &structCursorInfo);
     structCursorInfo.bVisible = FALSE;
     SetConsoleCursorInfo(g_console.doubleBuffer, &structCursorInfo);
@@ -749,9 +816,12 @@ void DoubleBufferingEnd()
 // поэтому достаточно проверить, занята ли уже любая из его ячеек.
 bool CheckCollisions(const Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction)
 {
-    bool isXNext = direction == MoveDirection::Left || direction == MoveDirection::Right;
+    bool isXNext = direction == MoveDirection::Left
+        || direction == MoveDirection::Right;
+
     bool isYNext = direction == MoveDirection::Drop
         && currentFigure.GetPositionY(true) != static_cast<int>(gameStack.size()) - 3;
+
     bool isPositionNext = direction != MoveDirection::Drop;
     int currentFigurePositionYStart = currentFigure.GetPositionY(isYNext);
     int currentFigurePositionYFinish = currentFigure.GetPositionY(isYNext) + SIDE_SQUARE;
@@ -786,21 +856,21 @@ bool TryMove(Figure &currentFigure, const std::vector<std::vector<std::pair<int,
 {
     switch (direction)
     {
-    case MoveDirection::Left:
-        currentFigure.ShiftLeft();
-        break;
-    case MoveDirection::Right:
-        currentFigure.ShiftRight();
-        break;
-    case MoveDirection::RotateUp:
-        currentFigure.RotateUp();
-        break;
-    case MoveDirection::RotateDown:
-        currentFigure.RotateDown();
-        break;
-    case MoveDirection::Drop:
-        currentFigure.ShiftDown();
-        break;
+        case MoveDirection::Left:
+            currentFigure.ShiftLeft();
+            break;
+        case MoveDirection::Right:
+            currentFigure.ShiftRight();
+            break;
+        case MoveDirection::RotateUp:
+            currentFigure.RotateUp();
+            break;
+        case MoveDirection::RotateDown:
+            currentFigure.RotateDown();
+            break;
+        case MoveDirection::Drop:
+            currentFigure.ShiftDown();
+            break;
     }
 
     if (CheckCollisions(currentFigure, gameStack, direction))
@@ -947,13 +1017,13 @@ bool PlayGame()
                 {
                     switch (ReturnToMenu())
                     {
-                    case MenuResult::Restart:
-                        return true;
-                    case MenuResult::Stay:
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
-                        break;
-                    case MenuResult::Quit:
-                        return false;
+                        case MenuResult::Restart:
+                            return true;
+                        case MenuResult::Stay:
+                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                            break;
+                        case MenuResult::Quit:
+                            return false;
                     }
                 }
 
@@ -1003,11 +1073,11 @@ bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStac
 
 void ClearLines
 (
-    std::vector<std::vector<std::pair<int, int>>> &gameStack
-    , const Figure &nextFigure
-    , unsigned int &score
-    , std::vector<std::pair<std::wstring, std::vector<int>>> &gameField
-    , const int &level
+    std::vector<std::vector<std::pair<int, int>>> &gameStack,
+    const Figure &nextFigure,
+    unsigned int &score,
+    std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+    const int &level
 )
 {
     std::size_t gameStackSize = gameStack.size();
