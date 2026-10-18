@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <cstddef>
 #include <string>
 #include <unordered_map>
 
@@ -260,9 +261,11 @@ namespace Tetris
     // Очищает клавиатурный буфер.
     inline void FlushKeyboard() noexcept
     {
+        // _getch() вызывается ради побочного эффекта (чистка буфера),
+        // возвращаемый символ намеренно отбрасываем.
         while (_kbhit())
         {
-            _getch();
+            (void)_getch();
         }
     }
 

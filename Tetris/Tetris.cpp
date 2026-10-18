@@ -1,6 +1,4 @@
-﻿#include "stdafx.h"
-
-#include "Keys.h"
+﻿#include "Keys.h"
 #include "Settings.h"
 
 #include <random>
@@ -150,6 +148,7 @@ const std::vector<std::map<int, int>> NEXT_POSITION_RIGHT
     { { 0,1 },{ 1,2 } }
 };
 
+// Поворот против часовой стрелки
 const std::vector<std::map<int, int>> NEXT_POSITION_ROTATE_UP
 {
     { { 0,3 },{ 1,3 },{ 2,4 },{ 3,5 },{ 4,7 },{ 5,8 },{ 6,8 },{ 7,9 },{ 8,0 },{ 9,2 } },
@@ -161,6 +160,7 @@ const std::vector<std::map<int, int>> NEXT_POSITION_ROTATE_UP
     {}
 };
 
+// Поворот по часовой стрелке
 const std::vector<std::map<int, int>> NEXT_POSITION_ROTATE_DOWN
 {
     { { 0,8 },{ 1,8 },{ 2,9 },{ 3,0 },{ 4,2 },{ 5,3 },{ 6,3 },{ 7,4 },{ 8,5 },{ 9,7 } },
@@ -659,13 +659,13 @@ void MyErrorExit(const wchar_t *comment)
 {
     system("cls");
     std::wcout << comment;
-    _getch();
+    (void)_getch(); // ждём нажатия, символ не нужен
     exit(0);
 }
 
 void ProgramSettings()
 {
-    _setmode(_fileno(stdout), _O_U16TEXT);
+    (void)_setmode(_fileno(stdout), _O_U16TEXT);
     srand(static_cast<unsigned>(time(NULL)));
     system("mode con cols=80 lines=25");
     g_console.hWnd = GetConsoleWindow();
@@ -1051,7 +1051,7 @@ void ClearKeyboardBuffer()
 {
     while (_kbhit())
     {
-        _getch();
+        (void)_getch(); // чистим буфер, символ не нужен
     }
 }
 
