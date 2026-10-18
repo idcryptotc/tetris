@@ -1,18 +1,19 @@
 ﻿#include "Keys.h"
 #include "Settings.h"
 
-#include <random>
+#include <cstdlib>
+#include <cstdio>
+#include <ctime>
+#include <iostream>
 #include <map>
-#include <vector>
+#include <random>
 #include <string>
 #include <utility>
-#include <cstdlib>
-#include <iostream>
+#include <vector>
+
 #include <conio.h>
 #include <fcntl.h>
 #include <io.h>
-#include <cstdio>
-#include <ctime>
 #include <Windows.h>
 
 // Точечный импорт: тянем в глобальное пространство только то, что используем,

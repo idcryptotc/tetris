@@ -1,14 +1,14 @@
 ﻿#pragma once
 
+#include "Keys.h"
+
 #include <cstddef>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
 #include <conio.h>
 #include <windows.h>
-
-#include "Keys.h"
-#include <iostream>
 
 namespace Tetris
 {
