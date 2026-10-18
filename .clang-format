@@ -1,0 +1,94 @@
+﻿# .clang-format — единственный источник истины для форматирования C/C++ кода.
+# Универсальные свойства файлов (charset, EOL, пробелы в конце строки) и
+# не-C++ файлы (.vcxproj, .sln, .ini, .md) — в .editorconfig.
+#
+# Применение: clang-format -i <файл>
+---
+BasedOnStyle: LLVM
+
+# Отступ 4 пробела — согласовано с indent_style/indent_size в .editorconfig.
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+ColumnLimit: 120
+
+# Скобки Allman: всё на своих строках.
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  BeforeWhile: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# switch: метки case отступлены относительно switch;
+# короткое тело (return) может стоять на строке метки.
+IndentCaseLabels: true
+AllowShortCaseLabelsOnASingleLine: true
+
+# namespace и классы: содержимое с внутренним отступом,
+# модификаторы доступа на уровне членов.
+NamespaceIndentation: Inner
+AccessModifierOffset: 0
+
+# Указатели и ссылки справа: const wchar_t *name, const Figure &figure.
+PointerAlignment: Right
+DerivePointerAlignment: false
+
+# Короткие конструкции в одну строку не складывать.
+AllowShortBlocksOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+
+# Тернарный оператор: перенос до '?'.
+BreakBeforeTernaryOperators: true
+
+# Инициализаторы конструкторов остаются на строке сигнатуры, пока влезают.
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+Cpp11BracedListStyle: true
+
+# Группировка и сортировка #include:
+#   1 — заголовки проекта ("Keys.h"),
+#   2 — стандартная библиотека (<string>),
+#   3 — Windows (<windows.h>, <conio.h> и т.п.).
+IncludeBlocks: Regroup
+SortIncludes: CaseInsensitive
+IncludeCategories:
+  - Regex: '^".*"$'
+    Priority: 1
+  - Regex: '^(?i)<(windows|conio|fcntl|io)\.h>$'
+    Priority: 3
+  - Regex: '^<.*>$'
+    Priority: 2
+
+# Комментарии: выравнивание хвостовых, перенос не ломать.
+AlignTrailingComments: true
+ReflowComments: false
+FixNamespaceComments: true
+
+# Прочее.
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlwaysBreakAfterReturnType: None
+BinPackArguments: true
+BinPackParameters: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+IndentPPDirectives: None
+SortUsingDeclarations: false
+SpaceBeforeParens: ControlStatements
+Standard: c++20
