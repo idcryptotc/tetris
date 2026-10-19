@@ -4,9 +4,10 @@
 
 Консольный **Тетрис** для Windows. Один исполняемый файл, без внешних зависимостей — только WinAPI и стандартная библиотека C++.
 
-- Платформа: **Win32** (x86), конфигурации Debug/Release.
-- Компилятор: **MSVC, toolset v143 (Visual Studio 2022)**.
-- Стандарт: **C++20** (`<LanguageStandard>stdcpp20</LanguageStandard>` в vcxproj).
+- Платформа: **x64** (по умолчанию) и **Win32** (x86, опционально), конфигурации Debug/Release.
+- Компилятор: **MSVC, toolset v145 (Visual Studio 2026)**.
+- Стандарт: **C++23** (`CMAKE_CXX_STANDARD 23` в `CMakeLists.txt`).
+- Сборка: **CMake** (генератор Visual Studio 18 2026).
 - **Нет** прекомпилированного заголовка (PCH удалён), **нет** тестов, **нет** CI.
 
 ## Структура
@@ -17,13 +18,19 @@
 | `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
 | `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
-| `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32, v143) |
+| `CMakeLists.txt` | Конфигурация сборки CMake (C++23, /W3, UNICODE; x64 или Win32 через `-A`) |
 | `README.md` | Описание игры для пользователей |
 
 ## Сборка
 
-Сборка только через Visual Studio 2022 (или `msbuild Tetris.sln /p:Configuration=Debug /p:Platform=Win32`).
+Сборка только через CMake (генератор Visual Studio 18 2026, toolset v145). Архитектура задаётся флагом `-A` при генерации:
+
+- **x64 (по умолчанию):** `cmake -B build -G "Visual Studio 18 2026" -A x64`, затем `cmake --build build --config Release` (или `Debug`).
+- **x86 (Win32):** `cmake -B build-x86 -G "Visual Studio 18 2026" -A Win32`, затем `cmake --build build-x86 --config Release`.
+
 После любого изменения кода **обязательно** пересоберите проект и убедитесь, что ошибок и предупреждений нет (анализатор MSVC включён, предупреждения — это проблемы).
+
+> ⚠️ Если при сборке появляется **MSB8052** («версия набора инструментов MSVC не совместима с набором инструментов платформы») — это конфликт `VCToolsVersion` в пользовательских листах `%LOCALAPPDATA%\Microsoft\MSBuild\v14.0\Microsoft.Cpp.<платформа>.user.props`. Удалите из них явное свойство `<VCToolsVersion>` — тогда v145 возьмёт свой дефолтный компилятор.
 
 ## Как устроено
 
@@ -61,14 +68,14 @@
 
 | Файл | Отвечает за |
 |---|---|
-| `.editorconfig` | Универсальные свойства файла и редактора: `charset`, `end_of_line`, `insert_final_newline`, `trim_trailing_whitespace`, базовые `indent_style`/`indent_size`, а также настройки для **не-C++** файлов (`.vcxproj`, `.sln`, `.ini`, `.md`). |
+| `.editorconfig` | Универсальные свойства файла и редактора: `charset`, `end_of_line`, `insert_final_newline`, `trim_trailing_whitespace`, базовые `indent_style`/`indent_size`, а также настройки для **не-C++** файлов (`.ini`, `.md`). |
 | `.clang-format` | **Единственный источник истины** для форматирования C/C++ кода: стиль скобок (Allman), отступ 4, `ColumnLimit`, выравнивание `case`, группировка `#include` и т.п. |
 
 Правила:
 
 - Для C/C++ при конфликте правил приоритет у **`.clang-format`**. C++-специфичные ключи `cpp_*` в `.editorconfig` **не дублируют** `.clang-format` и не должны появляться.
 - `indent_style`/`indent_size` в `.editorconfig` обязаны быть согласованы с `IndentWidth`/`UseTab` в `.clang-format`. Если разошлись — это баг, сообщить, а не выбирать самому.
-- Не-C++ файлы (`.vcxproj`, `.sln`, `.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
+- Не-C++ файлы (`.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
 - Третий файл конфигурации (`.clang-tidy`, `.cmake-format` и т.п.) не добавлять без явного запроса.
 
 ## Правила для агентов
@@ -79,4 +86,4 @@
 4. После изменений: сборка без ошибок **и** без предупреждений.
 5. `README.md` **всегда должен быть актуален**: при изменении функциональности, структуры файлов, управления или технологий обновляйте соответствующие разделы README в том же изменении.
 6. При правке `README.md` сохранять кодировку UTF-8 (в файле есть эмодзи, стрелки и box-drawing символы).
-7. Не коммитить артефакты: `Debug/`, `Release/`, `*.suo`, `*.sdf`, `.vs/`.
+7. Не коммитить артефакты: `build/`, `build-x86/`, `Debug/`, `Release/`, `.vs/`.

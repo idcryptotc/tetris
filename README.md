@@ -1,6 +1,6 @@
 ﻿# 🧱 Тетрис
 
-Консольный Тетрис на **C++20** для Windows. Без внешних зависимостей — только WinAPI и стандартная библиотека.
+Консольный Тетрис на **C++23** для Windows. Без внешних зависимостей — только WinAPI и стандартная библиотека.
 
 ```
         ┌────────┐
@@ -38,6 +38,7 @@
 
 | Файл | Назначение |
 |---|---|
+| `CMakeLists.txt` | Конфигурация сборки CMake |
 | `Tetris.cpp` | Игровая логика, рендер, игровой цикл, `main()` |
 | `Game.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
 | `Keys.h` | Виртуальные коды клавиш, действия, набор привязок |
@@ -45,9 +46,26 @@
 
 ## 🔧 Технологии
 
-- **C++20** — `inline constexpr`, `inline`-функции в заголовках (header-only модули настроек).
+- **C++23** — `inline constexpr`, `inline`-функции в заголовках (header-only модули настроек).
 - **WinAPI** — консольные буферы, `GetAsyncKeyState` для опроса клавиатуры.
+- **CMake** — система сборки (Visual Studio 2026, MSVC v145).
 - **Без внешних зависимостей** — только стандартная библиотека и Windows SDK.
+
+## 🔨 Сборка
+
+Требуется **Visual Studio 2026** (MSVC v145) и **CMake 3.21+**.
+
+```powershell
+# x64 (по умолчанию)
+cmake -B build -G "Visual Studio 18 2026" -A x64
+cmake --build build --config Release
+
+# x86 (Win32) — если нужен 32-битный вариант
+cmake -B build-x86 -G "Visual Studio 18 2026" -A Win32
+cmake --build build-x86 --config Release
+```
+
+Исполняемый файл: `build\Release\Tetris.exe` (или `build-x86\Release\Tetris.exe` для x86).
 
 ## 🗺️ Дорожная карта
 
