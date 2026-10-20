@@ -94,6 +94,19 @@ powershell -NoProfile -Command "Set-Location -LiteralPath 'D:\__ShiftDelete\gith
 
 **Alternative.** If git is already warmed up in the session (second and later launches), a direct call may fit within the 30-second timeout - then git can be called directly.
 
+### Polling protocol for background git commands
+
+When a git command is launched in the background (a `.bat` with output redirected to files), poll for the result file as follows:
+
+1. Launch the `.bat`. The MCP request times out at ~30 s, but the `.bat` survives and keeps running; by the time the timeout returns, ~30 s of real time have already passed.
+2. Read the result file immediately - this is the "check after 30 s" step, no extra sleep needed.
+3. If the file is absent, sleep and re-read every ~10 s, up to 10 times.
+4. If still absent, do one final check after ~30 s.
+5. If still absent, report: "Mr.Git отказываетсь с нами играть".
+6. If the file appears but is empty or contains an error, report: "Mr.Git нарушает все правила!".
+
+Note: each sleep must stay below the 30 s MCP request timeout, so in practice use ~9 s (step 3) and ~25 s (step 4).
+
 ## Правила для агентов
 
 1. Не возвращать PCH/`stdafx.h` — проект намеренно без прекомпилированного заголовка.
