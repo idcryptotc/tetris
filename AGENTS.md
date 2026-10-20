@@ -80,11 +80,11 @@
 - Не-C++ файлы (`.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
 - Третий файл конфигурации (`.clang-tidy`, `.cmake-format` и т.п.) не добавлять без явного запроса.
 
-## Working with git in the agent environment (slow cold-start workaround)
+## Working with git in the agent environment (mandatory protocol)
 
-**Problem.** The first `git.exe` launch in a session takes 30-45 seconds (Defender/AV, cold cache). The MCP request timeout in VS is 30 000 ms, so calling a git command directly through the agent tools (`run_powershell`, `git_status`, `git_log`, etc.) fails with `MCP request N timed out after 30000ms` - even when the tool `timeout` parameter is set higher.
+**Rule.** Every git command - `status`, `branch`, `remote`, `log`, `diff`, `add`, `commit`, `push` - must be executed through the background protocol below, without exceptions and from the very first call. Calling git directly through the agent tools (`run_powershell`, `git_status`, `git_log`, etc.) is forbidden: the MCP request in VS times out at 30 000 ms and the command is lost.
 
-**Workaround.** Run the git command with its output redirected to a file in the working folder. The MCP request still times out, but the background PowerShell process keeps running and writes the file; then read the file.
+**Protocol.** Run the git command with its output redirected to a file in the working folder. The MCP request still times out, but the background PowerShell process keeps running and writes the file; then read the file.
 
 ```powershell
 # 1) Launch: the MCP request will time out - that is normal, the process keeps living
@@ -119,5 +119,5 @@ Note: each sleep must stay below the 30 s MCP request timeout, so in practice us
 8. Комментарий к коммиту — на русском, краткий, в одну строку.
 9. Кириллицу, собранную из кодовых точек, Всегда читать обратно через `read_file` и визуально сверять до использования.
 Справочник: [`cyrillic.md`](cyrillic.md).
-10. `push` — строго только по разрешению.
+10. `push` — строго только по разрешению и строго через git-протокол (раздел “Working with git in the agent environment”).
 11. Данный проект не имеет решения, поэтому VS-инструменты файлов не работают, delete_file не работает - для работы с файлами используй PowerShell или cmd.
