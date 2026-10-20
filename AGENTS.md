@@ -1,4 +1,4 @@
-﻿# AGENTS.md — руководство для ИИ-агентов
+# AGENTS.md — руководство для ИИ-агентов
 
 ## О проекте
 
@@ -102,7 +102,7 @@ When a git command is launched in the background (a `.bat` with output redirecte
 2. Read the result file immediately - this is the "check after 30 s" step, no extra sleep needed.
 3. If the file is absent, sleep and re-read every ~10 s, up to 10 times.
 4. If still absent, do one final check after ~30 s.
-5. If still absent, report: "Mr.Git отказываетсь с нами играть".
+5. If still absent, report: "Mr.Git отказываетесь с нами играть".
 6. If the file appears but is empty or contains an error, report: "Mr.Git нарушает все правила!".
 
 Note: each sleep must stay below the 30 s MCP request timeout, so in practice use ~9 s (step 3) and ~25 s (step 4).
