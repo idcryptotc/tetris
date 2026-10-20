@@ -78,6 +78,22 @@
 - Не-C++ файлы (`.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
 - Третий файл конфигурации (`.clang-tidy`, `.cmake-format` и т.п.) не добавлять без явного запроса.
 
+## Working with git in the agent environment (slow cold-start workaround)
+
+**Problem.** The first `git.exe` launch in a session takes 30-45 seconds (Defender/AV, cold cache). The MCP request timeout in VS is 30 000 ms, so calling a git command directly through the agent tools (`run_powershell`, `git_status`, `git_log`, etc.) fails with `MCP request N timed out after 30000ms` - even when the tool `timeout` parameter is set higher.
+
+**Workaround.** Run the git command with its output redirected to a file in the working folder. The MCP request still times out, but the background PowerShell process keeps running and writes the file; then read the file.
+
+```powershell
+# 1) Launch: the MCP request will time out - that is normal, the process keeps living
+powershell -NoProfile -Command "Set-Location -LiteralPath 'D:\__ShiftDelete\github\tetris'; cmd /c 'git status > _gs_out.txt 2>&1'"
+# 2) Read the result: read_file _gs_out.txt
+```
+
+**Output encoding.** Redirecting through PowerShell `>` writes **UTF-16LE** (with null bytes) - reading it as UTF-8 makes the text fall apart. To get plain text, use `cmd /c 'git ... > file 2>&1'` (console encoding) or set `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` explicitly.
+
+**Alternative.** If git is already warmed up in the session (second and later launches), a direct call may fit within the 30-second timeout - then git can be called directly.
+
 ## Правила для агентов
 
 1. Не возвращать PCH/`stdafx.h` — проект намеренно без прекомпилированного заголовка.
