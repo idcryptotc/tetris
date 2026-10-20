@@ -92,8 +92,6 @@ powershell -NoProfile -Command "Set-Location -LiteralPath 'D:\__ShiftDelete\gith
 
 **Output encoding.** Redirecting through PowerShell `>` writes **UTF-16LE** (with null bytes) - reading it as UTF-8 makes the text fall apart. To get plain text, use `cmd /c 'git ... > file 2>&1'` (console encoding) or set `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` explicitly.
 
-**Alternative.** If git is already warmed up in the session (second and later launches), a direct call may fit within the 30-second timeout - then git can be called directly.
-
 ### Polling protocol for background git commands
 
 When a git command is launched in the background (a `.bat` with output redirected to files), poll for the result file as follows:
@@ -117,7 +115,7 @@ Note: each sleep must stay below the 30 s MCP request timeout, so in practice us
 6. При правке `README.md` сохранять кодировку UTF-8 (в файле есть эмодзи, стрелки и box-drawing символы).
 7. Не коммитить артефакты: `build/`, `build-x86/`, `Debug/`, `Release/`, `.vs/`.
 8. Комментарий к коммиту — на русском, краткий, в одну строку.
-
 9. Кириллицу, собранную из кодовых точек, Всегда читать обратно через `read_file` и визуально сверять до использования.
 Справочник: [`cyrillic.md`](cyrillic.md).
 10. `push` — строго только по разрешению.
+11. Данный проект не имеет решения, поэтому для работы с файлами используй PowerShell
