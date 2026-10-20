@@ -15,6 +15,8 @@
 | Файл | Назначение |
 |---|---|
 | `Tetris/Tetris.cpp` | Игровая логика: цикл, рендер, двойная буферизация консоли, меню, ввод, `main()`. Вся логика (кроме `main()`) — в `namespace Tetris` |
+| `Tetris/Figure.h` | Класс `Figure`: объявление |
+| `Tetris/Figure.cpp` | Класс `Figure`: реализация, движение, поворот, состояние |
 | `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
 | `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
