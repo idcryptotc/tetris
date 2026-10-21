@@ -1,4 +1,4 @@
-﻿#include "Game.h"
+﻿#include "GameData.h"
 #include "Keys.h"
 #include "Settings.h"
 
