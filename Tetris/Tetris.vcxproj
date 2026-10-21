@@ -153,7 +153,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="App.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Figure.h" />
     <ClInclude Include="FigureGenerator.h" />
@@ -163,6 +162,7 @@
     <ClInclude Include="GameMenu.h" />
     <ClInclude Include="Keys.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="Tetris.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Console.cpp" />

@@ -39,7 +39,7 @@
 | Файл | Назначение |
 |---|---|
 | `Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий |
-| `App.h` | Публичный API приложения: `PlayGame()` (меню — в `GameMenu.h`) |
+| `Tetris.h` | Публичный API приложения: `PlayGame()` (меню — в `GameMenu.h`) |
 | `Console.h` / `Console.cpp` | Консоль: инициализация (`ProgramSettings()`), двойная буферизация (`DoubleBufferingBegin/End`) |
 | `Game.h` / `Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
 | `GameField.h` / `GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |

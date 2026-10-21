@@ -1,4 +1,3 @@
-#include "App.h"
 #include "Figure.h"
 #include "FigureGenerator.h"
 #include "Game.h"
