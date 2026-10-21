@@ -1,16 +1,18 @@
 #include "App.h"
+#include "Figure.h"
+#include "FigureGenerator.h"
 #include "Game.h"
 #include "GameData.h"
 #include "GameField.h"
 #include "GameMenu.h"
-#include "Figure.h"
-#include "FigureGenerator.h"
 #include "Keys.h"
 #include "Settings.h"
 
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <windows.h>
 
 namespace Tetris
 {

@@ -1,4 +1,5 @@
 ﻿#include "Figure.h"
+#include "GameData.h"
 
 namespace Tetris
 {

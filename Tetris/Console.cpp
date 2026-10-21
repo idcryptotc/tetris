@@ -1,5 +1,6 @@
 ﻿#include "Console.h"
 
+#include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
@@ -7,13 +8,14 @@
 #include <conio.h>
 #include <fcntl.h>
 #include <io.h>
+#include <windows.h>
 
 namespace Tetris
 {
     ConsoleRenderer g_console;
 
     // Внутренняя функция: завершает программу с сообщением об ошибке.
-    void MyErrorExit(const wchar_t *comment)
+    static void MyErrorExit(const wchar_t *comment)
     {
         system("cls");
         std::wcout << comment;

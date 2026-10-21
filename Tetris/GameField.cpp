@@ -1,8 +1,15 @@
-﻿#include "GameField.h"
-#include "Console.h"
+﻿#include "Console.h"
+#include "Figure.h"
+#include "GameData.h"
+#include "GameField.h"
 
 #include <cstddef>
 #include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <windows.h>
 
 namespace Tetris
 {

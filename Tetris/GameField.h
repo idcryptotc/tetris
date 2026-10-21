@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Figure.h"
-#include "GameData.h"
 
 #include <string>
 #include <utility>

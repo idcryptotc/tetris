@@ -1,12 +1,12 @@
-﻿#include "FigureGenerator.h"
-#include "GameData.h"
+﻿#include "GameData.h"
+#include "FigureGenerator.h"
 
 #include <random>
 
 namespace Tetris
 {
     // Случайное целое в диапазоне [0, bound).
-    int RandomInt(int bound)
+    static int RandomInt(int bound)
     {
         static std::mt19937 rng{ std::random_device{}() };
         std::uniform_int_distribution<int> dist(0, bound - 1);
