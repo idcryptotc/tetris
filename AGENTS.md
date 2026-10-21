@@ -14,7 +14,9 @@
 
 | Файл | Назначение |
 |---|---|
-| `Tetris/Tetris.cpp` | Игровая логика: цикл, рендер, двойная буферизация консоли, меню, ввод, `main()`. Вся логика (кроме `main()`) — в `namespace Tetris` |
+| `Tetris/Tetris.cpp` | Игровая логика: цикл, рендер, двойная буферизация коноли, меню, ввод. Вся логика — в `namespace Tetris` |
+| `Tetris/Main.cpp` | Точка входа `main()`: инициализация коноли, загрузка привязкок клавиш, цикл «меню → игра» |
+| `Tetris/GameLoop.h` | Объявления функций из `Tetris.cpp`, которые нужны `main()`: `ProgramSettings`, `StartMenu`, `PlayGame` |
 | `Tetris/Figure.h` | Класс `Figure`: объявление |
 | `Tetris/Figure.cpp` | Класс `Figure`: реализация, движение, поворот, состояние |
 | `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |

@@ -10,9 +10,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Архитектура задаётся при генерации: -A x64 (по умолчанию) или -A Win32 (x86).
 add_executable(Tetris
     Tetris/Tetris.cpp
+    Tetris/Main.cpp
     Tetris/Figure.cpp
     Tetris/Figure.h
     Tetris/Game.h
+    Tetris/GameLoop.h
     Tetris/Keys.h
     Tetris/Settings.h
 )
