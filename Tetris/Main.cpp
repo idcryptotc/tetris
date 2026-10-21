@@ -1,4 +1,5 @@
 ﻿#include "App.h"
+#include "Console.h"
 #include "Settings.h"
 
 #include <cstdlib>
