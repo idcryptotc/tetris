@@ -91,4 +91,4 @@ MaxEmptyLinesToKeep: 1
 IndentPPDirectives: None
 SortUsingDeclarations: false
 SpaceBeforeParens: ControlStatements
-Standard: c++20
+Standard: c++23

@@ -5,8 +5,8 @@
 Консольный **Тетрис** для Windows. Один исполняемый файл, без внешних зависимостей — только WinAPI и стандартная библиотека C++.
 
 - Платформа: **Win32** (x86), конфигурации Debug/Release.
-- Компилятор: **MSVC, toolset v143 (Visual Studio 2022)**.
-- Стандарт: **C++20** (`<LanguageStandard>stdcpp20</LanguageStandard>` в vcxproj).
+- Компилятор: **MSVC, toolset v145 (Visual Studio 18)**.
+- Стандарт: **C++23** (`<LanguageStandard>stdcpp23</LanguageStandard>` в vcxproj).
 - **Нет** прекомпилированного заголовка (PCH удалён), **нет** тестов, **нет** CI.
 
 ## Структура
@@ -17,12 +17,12 @@
 | `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
 | `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
-| `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32, v143) |
+| `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32, v145) |
 | `README.md` | Описание игры для пользователей |
 
 ## Сборка
 
-Сборка только через Visual Studio 2022 (или `msbuild Tetris.sln /p:Configuration=Debug /p:Platform=Win32`).
+Сборка только через Visual Studio 18 (toolset v145) (или `msbuild Tetris.sln /p:Configuration=Debug /p:Platform=Win32`).
 После любого изменения кода **обязательно** пересоберите проект и убедитесь, что ошибок и предупреждений нет (анализатор MSVC включён, предупреждения — это проблемы).
 
 ## Как устроено
