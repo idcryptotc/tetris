@@ -1,6 +1,4 @@
-﻿#include "Figure.h"
-#include "Game.h"
-#include "GameLoop.h"
+﻿#include "Game.h"
 #include "Keys.h"
 #include "Settings.h"
 
@@ -21,6 +19,165 @@
 
 namespace Tetris
 {
+    class Figure
+    {
+    private:
+        int id{};
+        Colors color{ Colors::WHITE };
+        int position{};
+        int nextPosition{ position };
+        int x{ BASIC_X };
+        int y{ BASIC_Y };
+        int nextX{ x };
+        int nextY{ y + 1 };
+        int multiplier{ SHIFT_MULTIPLIER };
+        bool isUse{ true };
+
+    public:
+        Figure() = default;
+
+        Figure(int id, int p) : id(id), position(p)
+        {
+            color = FIGURE_COLORS.at(id);
+        }
+
+        void SetBasicParameters(int figureId, int figurePosition)
+        {
+            id = figureId;
+            color = FIGURE_COLORS.at(id);
+            position = figurePosition;
+            nextPosition = position;
+            x = BASIC_X;
+            y = BASIC_Y;
+            nextX = x;
+            nextY = y + 1;
+            isUse = true;
+        }
+
+        void SetPosition(int figurePosition)
+        {
+            position = figurePosition;
+        }
+
+        void ShiftRight()
+        {
+            if (x < CURRENT_X2 - 7)
+            {
+                nextX = x + multiplier;
+            }
+            else
+            {
+                if (NEXT_POSITION_RIGHT[id].find(position) != NEXT_POSITION_RIGHT[id].end())
+                {
+                    nextPosition = NEXT_POSITION_RIGHT[id].at(position);
+                }
+            }
+        }
+
+        void ShiftLeft()
+        {
+            if (x > CURRENT_X1)
+            {
+                nextX = x - multiplier;
+            }
+            else
+            {
+                if (NEXT_POSITION_LEFT[id].find(position) != NEXT_POSITION_LEFT[id].end())
+                {
+                    nextPosition = NEXT_POSITION_LEFT[id].at(position);
+                }
+            }
+        }
+
+        void ShiftDown()
+        {
+            nextY = y + 1;
+        }
+
+        void RotateUp()
+        {
+            if (NEXT_POSITION_ROTATE_UP[id].find(position) != NEXT_POSITION_ROTATE_UP[id].end())
+            {
+                nextPosition = NEXT_POSITION_ROTATE_UP[id].at(position);
+            }
+        }
+
+        void RotateDown()
+        {
+            if (NEXT_POSITION_ROTATE_DOWN[id].find(position) != NEXT_POSITION_ROTATE_DOWN[id].end())
+            {
+                nextPosition = NEXT_POSITION_ROTATE_DOWN[id].at(position);
+            }
+        }
+
+        int GetPositionX(bool isNext = false) const
+        {
+            return isNext
+                ? nextX
+                : x;
+        }
+
+        int GetPositionY(bool isNext = false) const
+        {
+            return isNext
+                ? nextY
+                : y;
+        }
+
+        int GetId() const
+        {
+            return id;
+        }
+
+        int GetColorAsInt() const
+        {
+            return (int)color;
+        }
+
+        int GetPosition(bool isNext = false) const
+        {
+            return isNext
+                ? nextPosition
+                : position;
+        }
+
+        void Action(Actions action)
+        {
+            switch (action)
+            {
+                case Actions::LEFT:
+                    x = nextX;
+                    position = nextPosition;
+                    break;
+                case Actions::RIGHT:
+                    x = nextX;
+                    position = nextPosition;
+                    break;
+                case Actions::DOWN:
+                    y = nextY > 18 ? 18 : nextY;
+                    break;
+                case Actions::ROTATE:
+                    position = nextPosition;
+                    break;
+                case Actions::DEFAULT:
+                    break;
+            }
+
+            nextX = x;
+            nextY = (y + 1) > 18 ? 18 : y + 1;
+        }
+
+        void SetUse(bool state)
+        {
+            isUse = state;
+        }
+
+        bool GetUse() const
+        {
+            return isUse;
+        }
+    };
+
     // Всё, что нужно для работы с двумя буферами консоли (двойная буферизация).
     // Единственный экземпляр — g_console; инициализируется в ProgramSettings().
     struct ConsoleRenderer
@@ -52,9 +209,12 @@ namespace Tetris
 
     void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
     int PositionById(int figureId);
+    int StartMenu();
     MenuResult ReturnToMenu();
+    void ProgramSettings();
     void DoubleBufferingBegin();
     void DoubleBufferingEnd();
+    bool PlayGame();
     int RandomInt(int bound);
     int RandomFigureId();
     bool CheckCollisions(const Figure &currentFigure, const std::vector<std::vector<std::pair<int, int>>> &gameStack, MoveDirection direction);
@@ -775,7 +935,7 @@ namespace Tetris
         {
             if (score > LEVEL_SCORE[i])
             {
-                level = static_cast<int>(i) + 1;
+                level = i + 1;
             }
             else
             {
@@ -783,4 +943,38 @@ namespace Tetris
             }
         }
     }
+}
+
+int main()
+{
+    Tetris::ProgramSettings();
+
+    // Настройки клавиш из tetris_settings.ini
+    Tetris::LoadBindings(Tetris::g_bindings);
+
+    while (true)
+    {
+        system("cls");
+        int menuItem = Tetris::StartMenu();
+
+        if (menuItem == 3)
+        {
+            return 0; // Выход
+        }
+
+        if (menuItem == 2)
+        {
+            Tetris::ConfigureBindings(Tetris::g_bindings);
+            continue; // Вернуться в меню, а не сразу в игру
+        }
+
+        if (!Tetris::PlayGame())
+        {
+            break; // Выбранный в игре «Выход»
+        }
+
+        // PlayGame() вернул true — конец партии, предлагаем сыграть снова
+    }
+
+    return 0;
 }

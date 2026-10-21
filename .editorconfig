@@ -16,6 +16,15 @@ indent_size = 4
 [*.md]
 trim_trailing_whitespace = false
 
+# Проекты Visual Studio: отступ 2 пробела (как в VS).
+[*.vcxproj]
+indent_size = 2
+
+# Файлы решений: табы.
+[*.sln]
+indent_style = tab
+indent_size = 4
+
 # INI-файлы настроек.
 [*.ini]
 indent_size = 4
