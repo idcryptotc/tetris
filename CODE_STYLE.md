@@ -58,10 +58,10 @@ void Example()
 
 - `#pragma once` в начале.
 - Порядок групп инклюдов (разделяются пустыми строками, закреплён в `.clang-format`):
-  1. заголовки проекта (`"Figure.h"`, `"GameData.h"`, `"Keys.h"`, `"Settings.h"`);
+  1. заголовки проекта (`"App.h"`, `"Figure.h"`, `"GameData.h"`, `"Keys.h"`, `"Settings.h"`);
   2. стандартная библиотека (`<cstddef>`, `<string>`, ...);
   3. Windows (`<windows.h>`, `<conio.h>`, ...).
-- `GameData.h`, `Keys.h` и `Settings.h` — **header-only**: всё, что в них объявлено, должно быть `inline` / `constexpr` / `inline const`. `Figure.h` — обычный заголовок, определения методов — в `Figure.cpp`.
+- `GameData.h`, `Keys.h` и `Settings.h` — **header-only**: всё, что в них объявлено, должно быть `inline` / `constexpr` / `inline const`. `Figure.h` — обычный заголовок, определения методов — в `Figure.cpp`. `App.h` — только объявления публичных функций, определения — в `Tetris.cpp`.
 - Код проекта в заголовках — в `namespace Tetris`.
 - `std::size_t` требует явного `#include <cstddef>`.
 
