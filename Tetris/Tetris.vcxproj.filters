@@ -18,6 +18,9 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Figure.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
     <ClInclude Include="GameData.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
@@ -29,6 +32,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Figure.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
     <ClCompile Include="Tetris.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
