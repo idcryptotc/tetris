@@ -21,7 +21,7 @@ trim_trailing_whitespace = false
 indent_size = 2
 
 # Файлы решений: табы.
-[*.sln]
+[*.slnx]
 indent_style = tab
 indent_size = 4
 

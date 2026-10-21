@@ -22,7 +22,7 @@
 
 ## Сборка
 
-Сборка только через Visual Studio 18 (toolset v145) (или `msbuild Tetris.sln /p:Configuration=Debug /p:Platform=Win32`).
+Сборка только через Visual Studio 18 (toolset v145) (или `msbuild Tetris.slnx /p:Configuration=Debug /p:Platform=Win32`).
 После любого изменения кода **обязательно** пересоберите проект и убедитесь, что ошибок и предупреждений нет (анализатор MSVC включён, предупреждения — это проблемы).
 
 ## Как устроено
@@ -61,14 +61,14 @@
 
 | Файл | Отвечает за |
 |---|---|
-| `.editorconfig` | Универсальные свойства файла и редактора: `charset`, `end_of_line`, `insert_final_newline`, `trim_trailing_whitespace`, базовые `indent_style`/`indent_size`, а также настройки для **не-C++** файлов (`.vcxproj`, `.sln`, `.ini`, `.md`). |
+| `.editorconfig` | Универсальные свойства файла и редактора: `charset`, `end_of_line`, `insert_final_newline`, `trim_trailing_whitespace`, базовые `indent_style`/`indent_size`, а также настройки для **не-C++** файлов (`.vcxproj`, `.slnx`, `.ini`, `.md`). |
 | `.clang-format` | **Единственный источник истины** для форматирования C/C++ кода: стиль скобок (Allman), отступ 4, `ColumnLimit`, выравнивание `case`, группировка `#include` и т.п. |
 
 Правила:
 
 - Для C/C++ при конфликте правил приоритет у **`.clang-format`**. C++-специфичные ключи `cpp_*` в `.editorconfig` **не дублируют** `.clang-format` и не должны появляться.
 - `indent_style`/`indent_size` в `.editorconfig` обязаны быть согласованы с `IndentWidth`/`UseTab` в `.clang-format`. Если разошлись — это баг, сообщить, а не выбирать самому.
-- Не-C++ файлы (`.vcxproj`, `.sln`, `.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
+- Не-C++ файлы (`.vcxproj`, `.slnx`, `.ini`, `README.md`) форматируются по `.editorconfig`, `.clang-format` к ним не применяется.
 - Третий файл конфигурации (`.clang-tidy`, `.cmake-format` и т.п.) не добавлять без явного запроса.
 
 ## Правила для агентов
