@@ -14,13 +14,12 @@
 
 | Файл | Назначение |
 |---|---|
-| `Tetris/Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий. Использует публичный API из `Tetris.h` и `Console.h` |
-| `Tetris/Tetris.h` | Публичный API приложения: объявление `PlayGame()` — единственная функция `Tetris.cpp`, доступная извне. Меню — в `GameMenu.h`, инициализация консоли — в `Console.h` |
+| `Tetris/Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий. Использует публичные функции из `Tetris.h`, `Console.h`, `GameMenu.h` и `Settings.h` |
+| `Tetris/Tetris.h` / `Tetris/Tetris.cpp` | Игровой цикл, ввод. Вся логика — в `namespace Tetris`; `Tetris.h` — объявление `PlayGame()` (единственная функция, доступная извне) |
 | `Tetris/Console.h` / `Tetris/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
 | `Tetris/Game.h` / `Tetris/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
 | `Tetris/GameField.h` / `Tetris/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
 | `Tetris/GameMenu.h` / `Tetris/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
-| `Tetris/Tetris.cpp` | Игровой цикл, ввод. Вся логика — в `namespace Tetris`, публичные функции объявлены в `Tetris.h` |
 | `Tetris/Figure.h` / `Tetris/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
 | `Tetris/FigureGenerator.h` / `Tetris/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |
 | `Tetris/GameData.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
@@ -62,7 +61,7 @@
 - Каждый файл включает **то, что использует сам** (PCH нет). `std::size_t` требует явного `#include <cstddef>`.
 - **`using namespace` запрещён** — только точечные `using`-декларации (по одному символу на имя).
 - Нежелательные предупреждения анализа (например, C6031 «возвращаемое значение пропущено») гасить **явным приведением `(void)вызов()`** с комментарием, а не `#pragma warning(disable: ...)`.
-- Заголовки `GameData.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h` и `FigureGenerator.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`/`GameField.cpp`/`GameMenu.cpp`/`FigureGenerator.cpp`. `Tetris.h` — только объявления публичных функций, определения — в `Tetris.cpp`.
+- Заголовки `GameData.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h` и `FigureGenerator.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`/`GameField.cpp`/`GameMenu.cpp`/`FigureGenerator.cpp`. `Tetris.h` — только объявление публичной функции, определение — в `Tetris.cpp`.
 
 ### Форматирование: два конфига, две роли
 

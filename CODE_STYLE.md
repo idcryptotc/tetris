@@ -61,7 +61,7 @@ void Example()
   1. заголовки проекта (`"Figure.h"`, `"GameData.h"`, `"Keys.h"`, `"Settings.h"`, `"Tetris.h"`);
   2. стандартная библиотека (`<cstddef>`, `<string>`, ...);
   3. Windows (`<windows.h>`, `<conio.h>`, ...).
-- `GameData.h`, `Keys.h` и `Settings.h` — **header-only**: всё, что в них объявлено, должно быть `inline` / `constexpr` / `inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h` и `FigureGenerator.h` — обычные заголовки, определения — в `Figure.cpp` / `Console.cpp` / `Game.cpp` / `GameField.cpp` / `GameMenu.cpp` / `FigureGenerator.cpp`. `Tetris.h` — только объявления публичных функций, определения — в `Tetris.cpp`.
+- `GameData.h`, `Keys.h` и `Settings.h` — **header-only**: всё, что в них объявлено, должно быть `inline` / `constexpr` / `inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h` и `FigureGenerator.h` — обычные заголовки, определения — в `Figure.cpp` / `Console.cpp` / `Game.cpp` / `GameField.cpp` / `GameMenu.cpp` / `FigureGenerator.cpp`. `Tetris.h` — только объявление публичной функции, определение — в `Tetris.cpp`.
 - Код проекта в заголовках — в `namespace Tetris`.
 - `std::size_t` требует явного `#include <cstddef>`.
 
