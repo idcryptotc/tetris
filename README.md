@@ -44,8 +44,9 @@
 | `Game.h` / `Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
 | `GameField.h` / `GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |
 | `GameMenu.h` / `GameMenu.cpp` | Меню: главное меню (`StartMenu`), возврат из игры (`ReturnToMenu`), очистка буфера клавиатуры (`ClearKeyboardBuffer`) |
-| `Tetris.cpp` | Игровой цикл, генерация фигур, ввод |
+| `Tetris.cpp` | Игровой цикл, ввод |
 | `Figure.h` / `Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги |
+| `FigureGenerator.h` / `FigureGenerator.cpp` | Генерация фигур: случайный id (`RandomFigureId`) и стартовая позиция (`PositionById`) |
 | `GameData.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
 | `Keys.h` | Виртуальные коды клавиш, действия, набор привязок |
 | `Settings.h` | Загрузка/сохранение настроек, интерактивная настройка клавиш |

@@ -156,6 +156,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="Figure.h" />
+    <ClInclude Include="FigureGenerator.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameData.h" />
     <ClInclude Include="GameField.h" />
@@ -166,6 +167,7 @@
   <ItemGroup>
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="Figure.cpp" />
+    <ClCompile Include="FigureGenerator.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameField.cpp" />
     <ClCompile Include="GameMenu.cpp" />
