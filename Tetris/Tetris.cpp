@@ -1,29 +1,22 @@
 #include "App.h"
 #include "Game.h"
-#include "GameField.h"
 #include "GameData.h"
+#include "GameField.h"
+#include "GameMenu.h"
 #include "Figure.h"
 #include "Keys.h"
 #include "Settings.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <random>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <conio.h>
-
 namespace Tetris
 {
     int PositionById(int figureId);
-    MenuResult ReturnToMenu();
     int RandomInt(int bound);
     int RandomFigureId();
-    void ClearKeyboardBuffer();
-
-
 
     // Случайное целое в диапазоне [0, bound).
     int RandomInt(int bound)
@@ -59,58 +52,6 @@ namespace Tetris
                     return -1;
                 }
         }
-    }
-
-    int StartMenu()
-    {
-        system("cls");
-        ClearKeyboardBuffer();
-        int menuItem;
-
-        while (true)
-        {
-            std::wcout << L"Меню" << std::endl;
-            std::wcout << L"1 - Новая игра" << std::endl;
-            std::wcout << L"2 - Настройка клавиш" << std::endl;
-            std::wcout << L"3 - Выход" << std::endl;
-            menuItem = _getch() - '0';
-
-            if (menuItem < 1 || menuItem > 3)
-            {
-                system("cls");
-                continue;
-            }
-
-            system("cls");
-            return menuItem;
-        }
-    }
-
-    MenuResult ReturnToMenu()
-    {
-        system("cls");
-        ClearKeyboardBuffer();
-        int menuItem;
-
-        while (true)
-        {
-            std::wcout << L"Меню" << std::endl;
-            std::wcout << L"1 - Новая игра" << std::endl;
-            std::wcout << L"2 - Продолжить" << std::endl;
-            std::wcout << L"3 - Выход" << std::endl;
-            menuItem = _getch() - '0';
-
-            if (menuItem < 1 || menuItem > 3)
-            {
-                system("cls");
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        return static_cast<MenuResult>(menuItem);
     }
 
     bool PlayGame()
@@ -218,14 +159,6 @@ namespace Tetris
             }
 
             nextFigure.SetUse(false);
-        }
-    }
-
-    void ClearKeyboardBuffer()
-    {
-        while (_kbhit())
-        {
-            (void)_getch(); // чистим буфер, символ не нужен
         }
     }
 }

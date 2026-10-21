@@ -39,11 +39,12 @@
 | Файл | Назначение |
 |---|---|
 | `Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий |
-| `App.h` | Публичный API приложения: `StartMenu()`, `PlayGame()` |
+| `App.h` | Публичный API приложения: `PlayGame()` (меню — в `GameMenu.h`) |
 | `Console.h` / `Console.cpp` | Консоль: инициализация (`ProgramSettings()`), двойная буферизация (`DoubleBufferingBegin/End`) |
 | `Game.h` / `Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
 | `GameField.h` / `GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |
-| `Tetris.cpp` | Игровой цикл, меню, генерация фигур, ввод |
+| `GameMenu.h` / `GameMenu.cpp` | Меню: главное меню (`StartMenu`), возврат из игры (`ReturnToMenu`), очистка буфера клавиатуры (`ClearKeyboardBuffer`) |
+| `Tetris.cpp` | Игровой цикл, генерация фигур, ввод |
 | `Figure.h` / `Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги |
 | `GameData.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
 | `Keys.h` | Виртуальные коды клавиш, действия, набор привязок |

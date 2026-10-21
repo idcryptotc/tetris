@@ -1,5 +1,6 @@
 ﻿#include "App.h"
 #include "Console.h"
+#include "GameMenu.h"
 #include "Settings.h"
 
 #include <cstdlib>
