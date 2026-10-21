@@ -42,7 +42,8 @@
 | `App.h` | Публичный API приложения: `StartMenu()`, `PlayGame()` |
 | `Console.h` / `Console.cpp` | Консоль: инициализация (`ProgramSettings()`), двойная буферизация (`DoubleBufferingBegin/End`) |
 | `Game.h` / `Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
-| `Tetris.cpp` | Игровой цикл, рендер поля, меню, ввод |
+| `GameField.h` / `GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |
+| `Tetris.cpp` | Игровой цикл, меню, генерация фигур, ввод |
 | `Figure.h` / `Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги |
 | `GameData.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
 | `Keys.h` | Виртуальные коды клавиш, действия, набор привязок |

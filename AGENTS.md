@@ -18,7 +18,8 @@
 | `Tetris/App.h` | Публичный API приложения: объявления `StartMenu()`, `PlayGame()` — единственные функции `Tetris.cpp`, доступные извне |
 | `Tetris/Console.h` / `Tetris/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
 | `Tetris/Game.h` / `Tetris/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
-| `Tetris/Tetris.cpp` | Игровой цикл, рендер поля, меню, ввод. Вся логика — в `namespace Tetris`, публичные функции объявлены в `App.h` |
+| `Tetris/GameField.h` / `Tetris/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
+| `Tetris/Tetris.cpp` | Игровой цикл, меню, генерация фигур, ввод. Вся логика — в `namespace Tetris`, публичные функции объявлены в `App.h` |
 | `Tetris/Figure.h` / `Tetris/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
 | `Tetris/GameData.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
@@ -59,7 +60,7 @@
 - Каждый файл включает **то, что использует сам** (PCH нет). `std::size_t` требует явного `#include <cstddef>`.
 - **`using namespace` запрещён** — только точечные `using`-декларации (по одному символу на имя).
 - Нежелательные предупреждения анализа (например, C6031 «возвращаемое значение пропущено») гасить **явным приведением `(void)вызов()`** с комментарием, а не `#pragma warning(disable: ...)`.
-- Заголовки `GameData.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h` и `Game.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`. `App.h` — только объявления публичных функций, определения — в `Tetris.cpp`.
+- Заголовки `GameData.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h`, `Game.h` и `GameField.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`/`GameField.cpp`. `App.h` — только объявления публичных функций, определения — в `Tetris.cpp`.
 
 ### Форматирование: два конфига, две роли
 

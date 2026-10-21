@@ -1,12 +1,10 @@
 ﻿#include "Game.h"
+#include "GameField.h"
 
 #include <cstddef>
 
 namespace Tetris
 {
-    // Внутренняя функция рендера поля (определена в Tetris.cpp):
-    // нужна для анимации очистки линий.
-    void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 
     // Проверяет, не пересекается ли «пробная» позиция фигуры со стеком.
     // Стек не копируется и не изменяется: тетрамино не пересекает само себя,
