@@ -4,7 +4,7 @@
 
 Консольный **Тетрис** для Windows. Один исполняемый файл, без внешних зависимостей — только WinAPI и стандартная библиотека C++.
 
-- Платформа: **Win32** (x86), конфигурации Debug/Release.
+- Платформы: **Win32** (x86) и **x64**, конфигурации Debug/Release.
 - Компилятор: **MSVC, toolset v145 (Visual Studio 18)**.
 - Стандарт: **C++23** (`<LanguageStandard>stdcpp23</LanguageStandard>` в vcxproj).
 - **Нет** прекомпилированного заголовка (PCH удалён), **нет** тестов, **нет** CI.
@@ -17,7 +17,7 @@
 | `Tetris/Game.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
 | `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
 | `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
-| `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32, v145) |
+| `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32/x64, v145) |
 | `README.md` | Описание игры для пользователей |
 
 ## Сборка
