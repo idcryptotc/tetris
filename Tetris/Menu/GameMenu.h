@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "GameData.h"
+#include "../Core/GameData.h"
 
 namespace Tetris
 {

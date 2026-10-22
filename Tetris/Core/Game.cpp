@@ -1,7 +1,7 @@
 ﻿#include "Figure.h"
 #include "Game.h"
 #include "GameData.h"
-#include "GameField.h"
+#include "../Rendering/GameField.h"
 
 #include <cstddef>
 #include <string>

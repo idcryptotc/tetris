@@ -36,19 +36,29 @@
 
 ## 📁 Структура проекта
 
+```
+Tetris/
+├─ Main.cpp              ← точка входа
+├─ Core/                 ← игровая логика: Tetris, Game, Figure,
+│                          FigureGenerator, GameData
+├─ Rendering/            ← рендер: Console, GameField
+├─ Input/                ← ввод и настройки: Keys, Settings
+└─ Menu/                 ← меню: GameMenu
+```
+
 | Файл | Назначение |
 |---|---|
 | `Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий |
-| `Tetris.h` / `Tetris.cpp` | Игровой цикл, ввод; `Tetris.h` — объявление `PlayGame()` |
-| `Console.h` / `Console.cpp` | Консоль: инициализация (`ProgramSettings()`), двойная буферизация (`DoubleBufferingBegin/End`) |
-| `Game.h` / `Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
-| `GameField.h` / `GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |
-| `GameMenu.h` / `GameMenu.cpp` | Меню: главное меню (`StartMenu`), возврат из игры (`ReturnToMenu`), очистка буфера клавиатуры (`ClearKeyboardBuffer`) |
-| `Figure.h` / `Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги |
-| `FigureGenerator.h` / `FigureGenerator.cpp` | Генерация фигур: случайный id (`RandomFigureId`) и стартовая позиция (`PositionById`) |
-| `GameData.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
-| `Keys.h` | Виртуальные коды клавиш, действия, набор привязок |
-| `Settings.h` | Загрузка/сохранение настроек, интерактивная настройка клавиш |
+| `Core/Tetris.h` / `Core/Tetris.cpp` | Игровой цикл, ввод; `Tetris.h` — объявление `PlayGame()` |
+| `Rendering/Console.h` / `Rendering/Console.cpp` | Консоль: инициализация (`ProgramSettings()`), двойная буферизация (`DoubleBufferingBegin/End`) |
+| `Core/Game.h` / `Core/Game.cpp` | Правила игры: столкновения, движения, падение, очистка линий, счёт и уровни |
+| `Rendering/GameField.h` / `Rendering/GameField.cpp` | Рендер поля: сборка кадра (`CreateGameField`) и вывод в консоль (`ViewGameField`) |
+| `Menu/GameMenu.h` / `Menu/GameMenu.cpp` | Меню: главное меню (`StartMenu`), возврат из игры (`ReturnToMenu`), очистка буфера клавиатуры (`ClearKeyboardBuffer`) |
+| `Core/Figure.h` / `Core/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги |
+| `Core/FigureGenerator.h` / `Core/FigureGenerator.cpp` | Генерация фигур: случайный id (`RandomFigureId`) и стартовая позиция (`PositionById`) |
+| `Core/GameData.h` | Константы, таблицы фигур, энамы, раскладка поля (namespace `Tetris`) |
+| `Input/Keys.h` | Виртуальные коды клавиш, действия, набор привязок |
+| `Input/Settings.h` | Загрузка/сохранение настроек, интерактивная настройка клавиш |
 
 ## 🔧 Технологии
 

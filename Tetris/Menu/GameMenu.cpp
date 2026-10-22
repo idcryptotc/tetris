@@ -1,4 +1,4 @@
-﻿#include "GameData.h"
+﻿#include "../Core/GameData.h"
 #include "GameMenu.h"
 
 #include <cstdlib>

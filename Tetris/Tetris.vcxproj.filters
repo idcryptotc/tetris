@@ -13,66 +13,90 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Файлы исходного кода\Core">
+      <UniqueIdentifier>{c0re0001-1111-2222-3333-444455556666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы исходного кода\Input">
+      <UniqueIdentifier>{inp0000000-1111-2222-3333-444455556666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы исходного кода\Menu">
+      <UniqueIdentifier>{menu0000-1111-2222-3333-444455556666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы исходного кода\Rendering">
+      <UniqueIdentifier>{rend0000-1111-2222-3333-444455556666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Заголовочные файлы\Core">
+      <UniqueIdentifier>{c0re0001-7777-8888-9999-000011112222}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Заголовочные файлы\Input">
+      <UniqueIdentifier>{inp0000000-7777-8888-9999-000011112222}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Заголовочные файлы\Menu">
+      <UniqueIdentifier>{menu0000-7777-8888-9999-000011112222}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Заголовочные файлы\Rendering">
+      <UniqueIdentifier>{rend0000-7777-8888-9999-000011112222}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Console.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Core\Tetris.h">
+      <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Figure.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Core\Game.h">
+      <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
-    <ClInclude Include="FigureGenerator.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Core\Figure.h">
+      <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Core\FigureGenerator.h">
+      <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
-    <ClInclude Include="GameField.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Core\GameData.h">
+      <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
-    <ClInclude Include="GameData.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Rendering\Console.h">
+      <Filter>Заголовочные файлы\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="GameMenu.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Rendering\GameField.h">
+      <Filter>Заголовочные файлы\Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Keys.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Input\Keys.h">
+      <Filter>Заголовочные файлы\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Settings.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Input\Settings.h">
+      <Filter>Заголовочные файлы\Input</Filter>
     </ClInclude>
-    <ClInclude Include="Tetris.h">
-      <Filter>Заголовочные файлы</Filter>
+    <ClInclude Include="Menu\GameMenu.h">
+      <Filter>Заголовочные файлы\Menu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Console.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="Figure.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="FigureGenerator.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="Game.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="GameField.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="GameMenu.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
     <ClCompile Include="Main.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
-    <ClCompile Include="Tetris.cpp">
-      <Filter>Файлы исходного кода</Filter>
+    <ClCompile Include="Core\Tetris.cpp">
+      <Filter>Файлы исходного кода\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Game.cpp">
+      <Filter>Файлы исходного кода\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Figure.cpp">
+      <Filter>Файлы исходного кода\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\FigureGenerator.cpp">
+      <Filter>Файлы исходного кода\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Console.cpp">
+      <Filter>Файлы исходного кода\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameField.cpp">
+      <Filter>Файлы исходного кода\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Menu\GameMenu.cpp">
+      <Filter>Файлы исходного кода\Menu</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

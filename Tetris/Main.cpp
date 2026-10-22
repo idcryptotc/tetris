@@ -1,7 +1,7 @@
-﻿#include "Console.h"
-#include "GameMenu.h"
-#include "Settings.h"
-#include "Tetris.h"
+﻿#include "Core/Tetris.h"
+#include "Rendering/Console.h"
+#include "Menu/GameMenu.h"
+#include "Input/Settings.h"
 
 #include <cstdlib>
 

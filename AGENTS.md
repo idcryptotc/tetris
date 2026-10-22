@@ -12,19 +12,29 @@
 
 ## Структура
 
+```
+Tetris/
+├─ Main.cpp              ← точка входа
+├─ Core/                 ← игровая логика: Tetris.h/.cpp, Game.h/.cpp,
+│                          Figure.h/.cpp, FigureGenerator.h/.cpp, GameData.h
+├─ Rendering/            ← рендер: Console.h/.cpp, GameField.h/.cpp
+├─ Input/                ← ввод и настройки: Keys.h, Settings.h
+└─ Menu/                 ← меню: GameMenu.h/.cpp
+```
+
 | Файл | Назначение |
 |---|---|
-| `Tetris/Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий. Использует публичные функции из `Tetris.h`, `Console.h`, `GameMenu.h` и `Settings.h` |
-| `Tetris/Tetris.h` / `Tetris/Tetris.cpp` | Игровой цикл, ввод. Вся логика — в `namespace Tetris`; `Tetris.h` — объявление `PlayGame()` (единственная функция, доступная извне) |
-| `Tetris/Console.h` / `Tetris/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
-| `Tetris/Game.h` / `Tetris/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
-| `Tetris/GameField.h` / `Tetris/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
-| `Tetris/GameMenu.h` / `Tetris/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
-| `Tetris/Figure.h` / `Tetris/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
-| `Tetris/FigureGenerator.h` / `Tetris/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |
-| `Tetris/GameData.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
-| `Tetris/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
-| `Tetris/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
+| `Tetris/Main.cpp` | Точка входа: `main()` — инициализация, загрузка настроек, цикл меню/партий. Использует публичные функции из `Core/Tetris.h`, `Rendering/Console.h`, `Menu/GameMenu.h` и `Input/Settings.h` |
+| `Tetris/Core/Tetris.h` / `Tetris/Core/Tetris.cpp` | Игровой цикл, ввод. Вся логика — в `namespace Tetris`; `Tetris.h` — объявление `PlayGame()` (единственная функция, доступная извне) |
+| `Tetris/Rendering/Console.h` / `Tetris/Rendering/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
+| `Tetris/Core/Game.h` / `Tetris/Core/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
+| `Tetris/Rendering/GameField.h` / `Tetris/Rendering/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
+| `Tetris/Menu/GameMenu.h` / `Tetris/Menu/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
+| `Tetris/Core/Figure.h` / `Tetris/Core/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
+| `Tetris/Core/FigureGenerator.h` / `Tetris/Core/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |
+| `Tetris/Core/GameData.h` | Header-only (всё `constexpr`/`inline const`): энамы (`Actions`, `MoveDirection`, `FallResult`, `MenuResult`, `Colors`), константы геометрии, таблицы фигур/цветов/переходов, раскладка `GAME_FIELD` |
+| `Tetris/Input/Keys.h` | VK-коды клавиш (`KeyCodes`), действия (`BindingAction`), набор привязок (`KeyBindings`), опрос клавиатуры (`IsKeyPressed`) |
+| `Tetris/Input/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
 | `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32/x64, v145) |
 | `README.md` | Описание игры для пользователей |
 

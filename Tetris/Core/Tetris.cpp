@@ -1,11 +1,11 @@
-#include "Figure.h"
+﻿#include "Figure.h"
 #include "FigureGenerator.h"
 #include "Game.h"
 #include "GameData.h"
-#include "GameField.h"
-#include "GameMenu.h"
-#include "Keys.h"
-#include "Settings.h"
+#include "../Rendering/GameField.h"
+#include "../Menu/GameMenu.h"
+#include "../Input/Keys.h"
+#include "../Input/Settings.h"
 
 #include <string>
 #include <utility>

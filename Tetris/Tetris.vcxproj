@@ -153,26 +153,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Console.h" />
-    <ClInclude Include="Figure.h" />
-    <ClInclude Include="FigureGenerator.h" />
-    <ClInclude Include="Game.h" />
-    <ClInclude Include="GameData.h" />
-    <ClInclude Include="GameField.h" />
-    <ClInclude Include="GameMenu.h" />
-    <ClInclude Include="Keys.h" />
-    <ClInclude Include="Settings.h" />
-    <ClInclude Include="Tetris.h" />
+    <ClCompile Include="Core\Figure.cpp" />
+    <ClCompile Include="Core\FigureGenerator.cpp" />
+    <ClCompile Include="Core\Game.cpp" />
+    <ClCompile Include="Core\Tetris.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Menu\GameMenu.cpp" />
+    <ClCompile Include="Rendering\Console.cpp" />
+    <ClCompile Include="Rendering\GameField.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Console.cpp" />
-    <ClCompile Include="Figure.cpp" />
-    <ClCompile Include="FigureGenerator.cpp" />
-    <ClCompile Include="Game.cpp" />
-    <ClCompile Include="GameField.cpp" />
-    <ClCompile Include="GameMenu.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Tetris.cpp" />
+    <ClInclude Include="Core\Figure.h" />
+    <ClInclude Include="Core\FigureGenerator.h" />
+    <ClInclude Include="Core\Game.h" />
+    <ClInclude Include="Core\GameData.h" />
+    <ClInclude Include="Core\Tetris.h" />
+    <ClInclude Include="Input\Keys.h" />
+    <ClInclude Include="Input\Settings.h" />
+    <ClInclude Include="Menu\GameMenu.h" />
+    <ClInclude Include="Rendering\Console.h" />
+    <ClInclude Include="Rendering\GameField.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

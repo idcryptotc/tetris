@@ -1,6 +1,6 @@
 ﻿#include "Console.h"
-#include "Figure.h"
-#include "GameData.h"
+#include "../Core/Figure.h"
+#include "../Core/GameData.h"
 #include "GameField.h"
 
 #include <cstddef>

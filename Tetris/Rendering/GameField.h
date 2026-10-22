@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Figure.h"
+#include "../Core/Figure.h"
 
 #include <string>
 #include <utility>
