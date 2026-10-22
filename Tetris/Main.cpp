@@ -5,6 +5,7 @@
 #include "Input/Settings.h"
 
 #include <cstdlib>
+#include <iostream>
 
 int main()
 {
@@ -13,8 +14,11 @@ int main()
     // Настройки клавиш из tetris_settings.ini
     Tetris::LoadBindings(Tetris::g_bindings);
 
-    // Заставка: логотип, висит до нажатия любой клавиши
+    // Инициализация базового буфера
     std::wcout << std::endl;
+    system("cls");
+
+    // Заставка: логотип, висит до нажатия любой клавиши
     Tetris::ShowSplash();
 
     while (true)
