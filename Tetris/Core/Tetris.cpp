@@ -52,8 +52,9 @@ namespace Tetris
 
                 while (stepProgress < COUNT_STEP_CHAPTER)
                 {
-                    // Приоритет клавиш сохранён как в исходной версии:
-                    // LEFT > RIGHT > ROTATE_UP > ROTATE_DOWN > HARD_DROP > EXIT.
+                    // Если нажато несколько клавиш одновременно, обрабатывается
+                    // только первая в этом порядке: LEFT, RIGHT, ROTATE_UP,
+                    // ROTATE_DOWN, HARD_DROP, EXIT.
                     if (IsKeyPressed(KeyFor(BindingAction::LEFT)))
                     {
                         TryMove(currentFigure, gameStack, MoveDirection::Left, Actions::LEFT);

@@ -7,7 +7,8 @@
 
 namespace Tetris
 {
-    // Действия игрового цикла (порядок приоритета: LEFT > RIGHT > ROTATE_UP > ROTATE_DOWN > HARD_DROP > EXIT).
+    // Действия игрового цикла (при одновременном нажатии нескольких клавиш
+    // обрабатывается первая в порядке: LEFT, RIGHT, ROTATE_UP, ROTATE_DOWN, HARD_DROP, EXIT).
     enum class Actions
     {
         LEFT, RIGHT, DOWN, ROTATE, DEFAULT

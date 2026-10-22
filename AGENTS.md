@@ -58,7 +58,7 @@ Tetris/
 - Консоль работает в **unicode-режиме** (`_setmode(_fileno(stdout), _O_U16TEXT)`, весь вывод через `std::wcout`, строки `L"..."`). Не использовать `printf`/`cout` для вывода в игру.
 - **Не использовать** `PeekMessageW`/`GetMessageW` — в консольном приложении они виснут. Ввод только через `GetAsyncKeyState` + `_kbhit`/`_getch`.
 - **Не использовать** `ReadConsoleInputW` — в свежем SDK структура `INPUT_RECORD` нестандартна.
-- Порядок приоритета клавиш в игровом цикле: LEFT > RIGHT > ROTATE_UP > ROTATE_DOWN > HARD_DROP > EXIT.
+- Если в игровом цикле нажато несколько клавиш одновременно, обрабатывается только первая в порядке: LEFT, RIGHT, ROTATE_UP, ROTATE_DOWN, HARD_DROP, EXIT.
 - Порядок элементов `BindingAction` совпадает с порядком `KeyBindings::keys` и `kBindingKeys` — при добавлении действия менять все три места.
 
 ## Стиль кода
