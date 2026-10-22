@@ -60,6 +60,9 @@
     <ClInclude Include="Rendering\GameField.h">
       <Filter>Заголовочные файлы\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\Splash.h">
+      <Filter>Заголовочные файлы\Rendering</Filter>
+    </ClInclude>
     <ClInclude Include="Input\Keys.h">
       <Filter>Заголовочные файлы\Input</Filter>
     </ClInclude>
@@ -90,6 +93,9 @@
       <Filter>Файлы исходного кода\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\GameField.cpp">
+      <Filter>Файлы исходного кода\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Splash.cpp">
       <Filter>Файлы исходного кода\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Menu\GameMenu.cpp">

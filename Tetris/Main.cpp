@@ -1,5 +1,6 @@
-﻿#include "Core/Tetris.h"
+#include "Core/Tetris.h"
 #include "Rendering/Console.h"
+#include "Rendering/Splash.h"
 #include "Menu/GameMenu.h"
 #include "Input/Settings.h"
 
@@ -11,6 +12,9 @@ int main()
 
     // Настройки клавиш из tetris_settings.ini
     Tetris::LoadBindings(Tetris::g_bindings);
+
+    // Заставка: логотип, висит до нажатия любой клавиши
+    Tetris::ShowSplash();
 
     while (true)
     {

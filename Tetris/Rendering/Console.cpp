@@ -1,4 +1,4 @@
-﻿#include "Console.h"
+#include "Console.h"
 
 #include <cstdio>
 #include <cstdlib>

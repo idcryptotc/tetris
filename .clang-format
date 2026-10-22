@@ -1,4 +1,4 @@
-﻿# .clang-format — единственный источник истины для форматирования C/C++ кода.
+# .clang-format — единственный источник истины для форматирования C/C++ кода.
 # Универсальные свойства файлов (charset, EOL, пробелы в конце строки) и
 # не-C++ файлы (.vcxproj, .sln, .ini, .md) — в .editorconfig.
 #
@@ -91,4 +91,4 @@ MaxEmptyLinesToKeep: 1
 IndentPPDirectives: None
 SortUsingDeclarations: false
 SpaceBeforeParens: ControlStatements
-Standard: c++23
+Standard: Latest

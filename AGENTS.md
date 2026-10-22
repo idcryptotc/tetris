@@ -17,7 +17,7 @@ Tetris/
 ├─ Main.cpp              ← точка входа
 ├─ Core/                 ← игровая логика: Tetris.h/.cpp, Game.h/.cpp,
 │                          Figure.h/.cpp, FigureGenerator.h/.cpp, GameData.h
-├─ Rendering/            ← рендер: Console.h/.cpp, GameField.h/.cpp
+├─ Rendering/            ← рендер: Console.h/.cpp, GameField.h/.cpp, Splash.h/.cpp
 ├─ Input/                ← ввод и настройки: Keys.h, Settings.h
 └─ Menu/                 ← меню: GameMenu.h/.cpp
 ```
@@ -29,6 +29,7 @@ Tetris/
 | `Tetris/Rendering/Console.h` / `Tetris/Rendering/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
 | `Tetris/Core/Game.h` / `Tetris/Core/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
 | `Tetris/Rendering/GameField.h` / `Tetris/Rendering/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
+| `Tetris/Rendering/Splash.h` / `Tetris/Rendering/Splash.cpp` | Заставка при запуске: логотип «TETRIS» + ряд фигур, висит до нажатия любой клавиши (`ShowSplash`) |
 | `Tetris/Menu/GameMenu.h` / `Tetris/Menu/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
 | `Tetris/Core/Figure.h` / `Tetris/Core/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
 | `Tetris/Core/FigureGenerator.h` / `Tetris/Core/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |

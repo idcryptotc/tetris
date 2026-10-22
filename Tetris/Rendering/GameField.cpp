@@ -1,4 +1,4 @@
-﻿#include "Console.h"
+#include "Console.h"
 #include "../Core/Figure.h"
 #include "../Core/GameData.h"
 #include "GameField.h"
@@ -128,4 +128,32 @@ namespace Tetris
 
         DoubleBufferingEnd();
     }
-}
+
+    void ViewGameFieldInvert(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField)
+    {
+        DoubleBufferingEnd();
+
+        for (const auto &i : gameField)
+        {
+            std::size_t iFirstSize = i.first.size();
+
+            for (std::size_t j = 0; j < iFirstSize; ++j)
+            {
+                if (i.first[j] == L'█')
+                {
+                    SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(i.second[j]));
+                    std::wcout << i.first[j];
+                    SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(Colors::LIGHTGRAY));
+                }
+                else
+                {
+                    std::wcout << i.first[j];
+                }
+            }
+
+            std::wcout << std::endl;
+        }
+
+        DoubleBufferingBegin();
+    }
+    }

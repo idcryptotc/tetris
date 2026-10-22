@@ -161,6 +161,7 @@
     <ClCompile Include="Menu\GameMenu.cpp" />
     <ClCompile Include="Rendering\Console.cpp" />
     <ClCompile Include="Rendering\GameField.cpp" />
+    <ClCompile Include="Rendering\Splash.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Figure.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="Menu\GameMenu.h" />
     <ClInclude Include="Rendering\Console.h" />
     <ClInclude Include="Rendering\GameField.h" />
+    <ClInclude Include="Rendering\Splash.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
