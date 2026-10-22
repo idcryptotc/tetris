@@ -235,7 +235,7 @@ namespace Tetris
         {
             if (score > LEVEL_SCORE[i])
             {
-                level = i + 1;
+                level = static_cast<int>(i) + 1;
             }
             else
             {
