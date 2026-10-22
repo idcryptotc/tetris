@@ -16,9 +16,6 @@
     <Filter Include="Файлы исходного кода\Core">
       <UniqueIdentifier>{c0re0001-1111-2222-3333-444455556666}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Файлы исходного кода\Input">
-      <UniqueIdentifier>{inp0000000-1111-2222-3333-444455556666}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Файлы исходного кода\Menu">
       <UniqueIdentifier>{menu0000-1111-2222-3333-444455556666}</UniqueIdentifier>
     </Filter>
