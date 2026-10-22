@@ -183,8 +183,7 @@ namespace Tetris
     void ShowSplash()
     {
         std::vector<std::pair<std::wstring, std::vector<int>>> frame = BuildSplashFrame();
-        ViewGameFieldInvert(frame);
+        ViewGameField(frame);
         (void)_getch(); // ждём любую клавишу
-        DoubleBufferingEnd();
     }
 }

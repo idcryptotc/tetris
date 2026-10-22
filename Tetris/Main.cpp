@@ -14,6 +14,7 @@ int main()
     Tetris::LoadBindings(Tetris::g_bindings);
 
     // Заставка: логотип, висит до нажатия любой клавиши
+    std::wcout << std::endl;
     Tetris::ShowSplash();
 
     while (true)

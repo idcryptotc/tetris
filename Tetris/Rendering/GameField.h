@@ -24,7 +24,4 @@ namespace Tetris
 
     // Выводит кадр в консоль (с двойной буферизацией).
     void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
-
-    // Выводит кадр в консоль (с двойной буферизацией). Буферы инвертированы.
-    void ViewGameFieldInvert(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
 }
