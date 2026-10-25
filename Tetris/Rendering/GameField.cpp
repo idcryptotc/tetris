@@ -105,9 +105,42 @@ namespace Tetris
     {
         DoubleBufferingBegin();
 
+        // Смещение кадра в буфере: в адаптивном режиме — центрирование
+        // (g_console.frameOffset, вычисляется в ComputeCopyRegion),
+        // в фиксированном — (0,0).
+        const COORD offset = g_console.frameOffset;
+
+        // Доступная ширина строки: в узком буфере строка обрезается,
+        // иначе wcout перенесёт хвост на следующую строку и кадр «поедет».
+        const int maxCols = static_cast<int>(g_console.csbi.dwSize.X) - offset.X;
+
+        int row = 0;
+        const int bufHeight = static_cast<int>(g_console.csbi.dwSize.Y);
+
         for (const auto &i : gameField)
         {
+            const int bufRow = offset.Y + row;
+
+            // Адаптивный режим: строки кадра, выходящие за низ буфера
+            // (маленькое окно), пропускаем — иначе курсор уйдёт за пределы
+            // буфера и кадр «поедет».
+            if (g_console.mode == ConsoleMode::Adaptive && bufRow >= bufHeight)
+            {
+                ++row;
+                continue;
+            }
+
+            if (g_console.mode == ConsoleMode::Adaptive)
+            {
+                (void)SetConsoleCursorPosition(g_console.basicBuffer, COORD{ offset.X, static_cast<SHORT>(bufRow) });
+            }
+
             std::size_t iFirstSize = i.first.size();
+
+            if (maxCols > 0 && iFirstSize > static_cast<std::size_t>(maxCols))
+            {
+                iFirstSize = static_cast<std::size_t>(maxCols);
+            }
 
             for (std::size_t j = 0; j < iFirstSize; ++j)
             {
@@ -124,6 +157,7 @@ namespace Tetris
             }
 
             std::wcout << std::endl;
+            ++row;
         }
 
         DoubleBufferingEnd();

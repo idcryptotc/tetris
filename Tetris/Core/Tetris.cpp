@@ -2,6 +2,7 @@
 #include "FigureGenerator.h"
 #include "Game.h"
 #include "GameData.h"
+#include "../Rendering/Console.h"
 #include "../Rendering/GameField.h"
 #include "../Menu/GameMenu.h"
 #include "../Input/Keys.h"
@@ -97,6 +98,10 @@ namespace Tetris
                             case MenuResult::Restart:
                                 return true;
                             case MenuResult::Stay:
+                                // В адаптивном режиме кадр центрируется и не
+                                // покрывает весь буфер — текст меню паузы в
+                                // левом верхнем углу остался бы видимым.
+                                ClearConsoleBuffer();
                                 CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
                                 break;
                             case MenuResult::Quit:

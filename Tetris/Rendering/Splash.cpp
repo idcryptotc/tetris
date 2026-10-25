@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <conio.h>
+#include <windows.h>
 
 namespace Tetris
 {
@@ -180,8 +181,31 @@ namespace Tetris
         return frame;
     }
 
+    // Проверка параметров окна (только адаптивный режим): если окно меньше
+    // кадра 80x25 — MessageBox (гарантия видимости: строка в консоли
+    // в маленьком окне может быть обрезана вьюпортом). Шрифт не проверяем —
+    // в conpty его контролирует терминал, а поле корректно рисуется
+    // с любым шрифтом (просто будет выглядеть плотнее/реже).
+    static void CheckWindowParameters()
+    {
+        if (g_console.mode != ConsoleMode::Adaptive)
+        {
+            return;
+        }
+
+        if (g_console.csbi.dwSize.X < 80 || g_console.csbi.dwSize.Y < 25)
+        {
+            (void)MessageBoxW(
+                nullptr,
+                L"Увеличьте окно консоли хотя бы до 80x25 — поле будет обрезано",
+                L"Тетрис",
+                MB_OK | MB_ICONWARNING);
+        }
+    }
+
     void ShowSplash()
     {
+        CheckWindowParameters();
         std::vector<std::pair<std::wstring, std::vector<int>>> frame = BuildSplashFrame();
         ViewGameField(frame);
         (void)_getch(); // ждём любую клавишу
