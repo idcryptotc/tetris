@@ -1,4 +1,5 @@
 #include "Console.h"
+#include "../Core/GameData.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -170,6 +171,22 @@ namespace Tetris
         g_console.mode = DetectConptyHost()
             ? ConsoleMode::Adaptive
             : ConsoleMode::Fixed;
+
+        // Truecolor (24-бит, VT) — только Adaptive (Windows Terminal):
+        // рисуем напрямую в видимый буфер, truecolor там удерживается.
+        // В Fixed конвейер идёт через CHAR_INFO (16 атрибутов), 24-бит
+        // не удержится — остаёмся на 16-цветном пути (SetConsoleTextAttribute).
+        if (g_console.mode == ConsoleMode::Adaptive)
+        {
+            DWORD consoleMode = 0;
+            if (GetConsoleMode(g_console.basicBuffer, &consoleMode))
+            {
+                if (SetConsoleMode(g_console.basicBuffer, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                {
+                    g_console.truecolor = true;
+                }
+            }
+        }
 
         // ВРЕМЕННО (отладка): флагами командной строки можно переопределить
         // режим (--adaptive / --fixed) и записать диагностику в
@@ -426,5 +443,32 @@ namespace Tetris
         DWORD written;
         (void)FillConsoleOutputCharacterW(
             g_console.basicBuffer, L' ', totalCells, COORD{ 0, 0 }, &written);
+    }
+
+    // Truecolor (24-бит, только Adaptive): добавляет в строку
+    // VT-последовательность цвета ESC[38;2;R;G;Bm. rgb — индекс в kColorRgb.
+    // Строка собирается целиком и выводится одним записом (быстрее, чем
+    // по-символьно через std::wcout).
+    void AppendTrueColor(std::wstring &row, int rgb)
+    {
+        const Rgb &c = kColorRgb[rgb];
+        row += L"\x1b[38;2;";
+        row += std::to_wstring(c.r);
+        row += L";";
+        row += std::to_wstring(c.g);
+        row += L";";
+        row += std::to_wstring(c.b);
+        row += L"m";
+    }
+
+    // Truecolor: добавляет в строку VT-последовательность установки
+    // позиции курсора (CUP, ESC[row;colH). row, col — 1-based.
+    void AppendCursorPos(std::wstring &out, int row, int col)
+    {
+        out += L"\x1b[";
+        out += std::to_wstring(row);
+        out += L";";
+        out += std::to_wstring(col);
+        out += L"H";
     }
 }

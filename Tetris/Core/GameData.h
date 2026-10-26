@@ -56,6 +56,36 @@ namespace Tetris
         WHITE
     };
 
+    // 24-битный цвет (truecolor).
+    struct Rgb
+    {
+        int r{ 0 };
+        int g{ 0 };
+        int b{ 0 };
+    };
+
+    // Классическая палитра: RGB для каждого 16-цветного индекса консоли.
+    // Индекс — static_cast<int>(Colors). Используется truecolor-рендером.
+    inline const Rgb kColorRgb[16] =
+    {
+        {   0,   0,   0 },  // BLACK
+        {   0,   0, 180 },  // BLUE
+        {   0, 160,   0 },  // GREEN
+        {   0, 240, 240 },  // CYAN
+        { 200,   0,   0 },  // RED
+        { 186,  85, 211 },  // MAGENTA
+        { 160,  80,   0 },  // BROWN
+        { 200, 200, 200 },  // LIGHTGRAY
+        { 100, 100, 100 },  // DARKGRAY
+        {   0, 162, 232 },  // LIGHTBLUE
+        {  50, 205,  50 },  // LIGHTGREEN
+        {  80, 240, 240 },  // LIGHTCYAN
+        { 220,  20,  60 },  // LIGHTRED
+        { 240,  80, 240 },  // LIGHTMAGENTA
+        { 255, 215,   0 },  // YELLOW
+        { 255, 255, 255 },  // WHITE
+    };
+
     // Ряды падения фигуры: 0..LAST_FALL_LINE (всего MAX_FALL_LINES).
     constexpr int MAX_FALL_LINES = 19;
     constexpr int LAST_FALL_LINE = MAX_FALL_LINES - 1;

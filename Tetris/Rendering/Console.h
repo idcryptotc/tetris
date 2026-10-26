@@ -2,6 +2,8 @@
 
 #include <Windows.h>
 
+#include <string>
+
 namespace Tetris
 {
     // Режим рендера консоли.
@@ -27,6 +29,7 @@ namespace Tetris
         ConsoleMode mode{ ConsoleMode::Fixed };         // Режим рендера
         COORD frameOffset{ 0, 0 };                      // Смещение кадра в буфере (Adaptive)
         COORD lastBufSize{ 0, 0 };                      // Размер буфера прошлого кадра (Adaptive: очистка при ресайзе)
+        bool truecolor{ false };                        // Truecolor (VT) включён (только Adaptive)
     };
 
     extern ConsoleRenderer g_console;
@@ -50,4 +53,14 @@ namespace Tetris
 
     // Конец кадра: возвращает активный буфер на основной (видимый).
     void DoubleBufferingEnd();
+
+    // Truecolor (24-бит, только Adaptive): добавляет в строку
+    // VT-последовательность цвета ESC[38;2;R;G;Bm. rgb — индекс в kColorRgb.
+    // Строка собирается целиком и выводится одним записом (быстрее, чем
+    // по-символьно через std::wcout).
+    void AppendTrueColor(std::wstring &row, int rgb);
+
+    // Truecolor: добавляет в строку VT-последовательность установки
+    // позиции курсора (CUP, ESC[row;colH). row, col — 1-based.
+    void AppendCursorPos(std::wstring &out, int row, int col);
 }

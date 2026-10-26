@@ -1,5 +1,6 @@
 #include "Console.h"
 #include "GameField.h"
+#include "PixelFont.h"
 #include "../Core/GameData.h"
 
 #include <string>
@@ -11,64 +12,9 @@
 
 namespace Tetris
 {
-    // Шрифт 5x7 для букв логотипа. 1 — заполненная ячейка, 0 — пустая.
-    // Порядок букв: T, E, R, I, S.
-    static constexpr unsigned char kLogoFont[5][7][5] =
-    {
-        // T
-        {
-            { 1,1,1,1,1 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-        },
-        // E
-        {
-            { 1,1,1,1,1 },
-            { 1,0,0,0,0 },
-            { 1,0,0,0,0 },
-            { 1,1,1,1,0 },
-            { 1,0,0,0,0 },
-            { 1,0,0,0,0 },
-            { 1,1,1,1,1 },
-        },
-        // R
-        {
-            { 1,1,1,1,0 },
-            { 1,0,0,0,1 },
-            { 1,0,0,0,1 },
-            { 1,1,1,1,0 },
-            { 1,0,1,0,0 },
-            { 1,0,0,1,0 },
-            { 1,0,0,0,1 },
-        },
-        // I
-        {
-            { 1,1,1,1,1 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 0,0,1,0,0 },
-            { 1,1,1,1,1 },
-        },
-        // S
-        {
-            { 0,1,1,1,1 },
-            { 1,0,0,0,0 },
-            { 1,0,0,0,0 },
-            { 0,1,1,1,0 },
-            { 0,0,0,0,1 },
-            { 0,0,0,0,1 },
-            { 1,1,1,1,0 },
-        },
-    };
-
-    // Индексы глифов в kLogoFont для букв TETRIS (вторая T переиспользует первую).
-    static constexpr int kLetterGlyph[6] = { 0, 1, 0, 2, 3, 4 };
+    // Индексы глифов в kPixelGlyphs для букв TETRIS (вторая T переиспользует
+    // первую). Индексы — по алфавиту (A=0, B=1, ...).
+    static constexpr int kLetterGlyph[6] = { 19, 4, 19, 17, 8, 18 };
 
     // Цвет букв (классическая палитра тетромино).
     static constexpr Colors kLetterColors[6] =
@@ -144,7 +90,7 @@ namespace Tetris
             {
                 for (int px = 0; px < 5; ++px)
                 {
-                    if (kLogoFont[glyph][py][px])
+                    if (kPixelGlyphs[glyph][py][px])
                     {
                         for (int sy = 0; sy < scale; ++sy)
                         {
@@ -207,7 +153,7 @@ namespace Tetris
     {
         CheckWindowParameters();
         std::vector<std::pair<std::wstring, std::vector<int>>> frame = BuildSplashFrame();
-        ViewGameField(frame);
+        ViewGameField(frame, true);
         (void)_getch(); // ждём любую клавишу
     }
 }

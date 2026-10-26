@@ -36,9 +36,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Core\Tetris.h">
       <Filter>Заголовочные файлы\Core</Filter>
     </ClInclude>
@@ -71,6 +68,9 @@
     </ClInclude>
     <ClInclude Include="Menu\GameMenu.h">
       <Filter>Заголовочные файлы\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\PixelFont.h">
+      <Filter>Заголовочные файлы</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

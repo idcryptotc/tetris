@@ -23,5 +23,9 @@ namespace Tetris
     );
 
     // Выводит кадр в консоль (с двойной буферизацией).
-    void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField);
+    // useTruecolor — рисовать цветные ячейки (█) через truecolor (VT,
+    // только Adaptive); по умолчанию false — 16-цветный путь.
+    void ViewGameField(
+        const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+        bool useTruecolor = false);
 }

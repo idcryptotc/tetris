@@ -18,14 +18,14 @@
 
 **Чекбоксы:**
 
-- [ ] **Фаза 0 — VT-проба (де-риск).** Включить `ENABLE_VIRTUAL_TERMINAL_PROCESSING`, вывести одну truecolor-строку через `std::wcout` (у нас `_O_U16TEXT`), проверить в WT. Если VT в unicode-режиме не работает — остановиться и обсудить способ вывода, не писать остальное.
+- [x] **Фаза 0 — VT-проба (де-риск).** Включить `ENABLE_VIRTUAL_TERMINAL_PROCESSING`, вывести одну truecolor-строку через `std::wcout` (у нас `_O_U16TEXT`), проверить в WT. Если VT в unicode-режиме не работает — остановиться и обсудить способ вывода, не писать остальное.
 - [ ] **Фаза 1 — фундамент.**
-  - [ ] RGB-палитра в `GameData.h` (маппинг `Colors` → RGB, header-only).
-  - [ ] Включение VT в `ProgramSettings()` **только для Adaptive** + флаг `g_console.truecolor`.
-  - [ ] Хелперы в `Console`: `SetTrueColor(rgb)` / `ResetColor()` (выдают VT-последовательность).
-  - [ ] `ViewGameField`: параметр `useTruecolor`, truecolor-ветка для ячеек `█`; горячий игровой путь не трогаем (по умолчанию `false`).
-  - [ ] Заставка → truecolor.
-  - [ ] Вынести **все** глифы пиксельного шрифта в отдельный файл (сейчас `kLogoFont` в `Splash.cpp`); добавить глифы для «GAME OVER» / «YOU WIN» (G, A, M, E, O, V, R, U, Y, W, N — T, I, S уже есть).
+  - [x] RGB-палитра в `GameData.h` (маппинг `Colors` → RGB, header-only).
+  - [x] Включение VT в `ProgramSettings()` **только для Adaptive** + флаг `g_console.truecolor`.
+  - [x] Хелперы в `Console`: `SetTrueColor(rgb)` / `ResetColor()` (выдают VT-последовательность).
+  - [x] `ViewGameField`: параметр `useTruecolor`, truecolor-ветка для ячеек `█`; горячий игровой путь не трогаем (по умолчанию `false`).
+  - [x] Заставка → truecolor.
+  - [x] Вынести **все** глифы пиксельного шрифта в отдельный файл (сейчас `kLogoFont` в `Splash.cpp`); добавить глифы для «GAME OVER» / «YOU WIN» (G, A, M, E, O, V, R, U, Y, W, N — T, I, S уже есть).
   - [ ] Сборка без ошибок и предупреждений; проверка truecolor-заставки в WT.
 - [ ] **Фаза 2 — экраны Game Over / You Win.**
   - [ ] Определить условие победы: достижение 25-го уровня / счёт ≥ 8000 (ввести флаг победы в игровой цикл).

@@ -101,14 +101,90 @@ namespace Tetris
         ViewGameField(gameField);
     }
 
-    void ViewGameField(const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField)
+    void ViewGameField(
+        const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+        bool useTruecolor)
     {
+        // Truecolor доступен только в Adaptive (VT включён в ProgramSettings);
+        // в Fixed — 16-цветный путь.
+        const bool truecolor = useTruecolor && g_console.truecolor;
         DoubleBufferingBegin();
 
         // Смещение кадра в буфере: в адаптивном режиме — центрирование
         // (g_console.frameOffset, вычисляется в ComputeCopyRegion),
         // в фиксированном — (0,0).
         const COORD offset = g_console.frameOffset;
+
+        if (truecolor)
+        {
+            // Truecolor: весь кадр собирается в одну строку и выводится
+            // одним записом. Консоль (conpty/Windows Terminal) рендерит
+            // инкрементально — построчный вывод (24 записи + flush на строку)
+            // давал «рулон»: кадр появлялся по строкам. Один запис = один
+            // кадр терминала = кадр появляется атомарно. Позиционирование
+            // строк — VT-последовательностью CUP (ESC[row;colH], 1-based),
+            // т.к. SetConsoleCursorPosition в середине одного записа
+            // вызвать нельзя.
+            std::wstring frame;
+            int row = 0;
+            const int bufHeight = static_cast<int>(g_console.csbi.dwSize.Y);
+            const int maxCols = static_cast<int>(g_console.csbi.dwSize.X) - offset.X;
+
+            for (const auto &i : gameField)
+            {
+                const int bufRow = offset.Y + row;
+
+                // Строки кадра, выходящие за низ буфера (маленькое окно),
+                // пропускаем.
+                if (bufRow >= bufHeight)
+                {
+                    ++row;
+                    continue;
+                }
+
+                std::size_t iFirstSize = i.first.size();
+                if (maxCols > 0 && iFirstSize > static_cast<std::size_t>(maxCols))
+                {
+                    iFirstSize = static_cast<std::size_t>(maxCols);
+                }
+
+                AppendCursorPos(frame, bufRow + 1, offset.X + 1);
+
+                // VT-последовательность цвета — только при смене цвета, а не
+                // на каждую ячейку (цвета в логотипе идут полосами).
+                int lastColor = -1;
+                for (std::size_t j = 0; j < iFirstSize; ++j)
+                {
+                    if (i.first[j] == L'█')
+                    {
+                        const int color = i.second[j];
+                        if (color != lastColor)
+                        {
+                            AppendTrueColor(frame, color);
+                            lastColor = color;
+                        }
+                        frame += i.first[j];
+                    }
+                    else
+                    {
+                        frame += i.first[j];
+                    }
+                }
+
+                // Сброс на LIGHTGRAY, чтобы текст вне блоков не унаследовал
+                // цвет последнего блока.
+                if (lastColor != -1)
+                {
+                    AppendTrueColor(frame, static_cast<int>(Colors::LIGHTGRAY));
+                }
+
+                ++row;
+            }
+
+            std::wcout << frame;
+            DoubleBufferingEnd();
+            return;
+        }
 
         // Доступная ширина строки: в узком буфере строка обрезается,
         // иначе wcout перенесёт хвост на следующую строку и кадр «поедет».
