@@ -148,49 +148,17 @@ namespace Tetris
         (void)_setmode(_fileno(stdout), _O_U16TEXT);
         srand(static_cast<unsigned>(time(NULL)));
         g_console.hWnd = GetConsoleWindow();
-        GetWindowRect(g_console.hWnd, &g_console.basicRect);
-        g_console.basicBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
 
-        g_console.doubleBuffer = CreateConsoleScreenBuffer(
-            GENERIC_READ | GENERIC_WRITE,
-            FILE_SHARE_READ | FILE_SHARE_WRITE,
-            NULL,
-            CONSOLE_TEXTMODE_BUFFER,
-            NULL
-        );
-
-        if (g_console.basicBuffer == INVALID_HANDLE_VALUE ||
-            g_console.doubleBuffer == INVALID_HANDLE_VALUE)
-        {
-            MyErrorExit(L"CreateConsoleScreenBuffer");
-            return;
-        }
-
-        // Режим рендера: по умолчанию — conpty-хост (Windows Terminal и
-        // т.п.) адаптивный, иначе фиксированный.
+        // Режим рендера: детект ДО создания doubleBuffer — ранний mode con
+        // (Fixed) должен сработать до создания резервного буфера (см. ниже).
         g_console.mode = DetectConptyHost()
             ? ConsoleMode::Adaptive
             : ConsoleMode::Fixed;
 
-        // Truecolor (24-бит, VT) — только Adaptive (Windows Terminal):
-        // рисуем напрямую в видимый буфер, truecolor там удерживается.
-        // В Fixed конвейер идёт через CHAR_INFO (16 атрибутов), 24-бит
-        // не удержится — остаёмся на 16-цветном пути (SetConsoleTextAttribute).
-        if (g_console.mode == ConsoleMode::Adaptive)
-        {
-            DWORD consoleMode = 0;
-            if (GetConsoleMode(g_console.basicBuffer, &consoleMode))
-            {
-                if (SetConsoleMode(g_console.basicBuffer, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-                {
-                    g_console.truecolor = true;
-                }
-            }
-        }
-
         // ВРЕМЕННО (отладка): флагами командной строки можно переопределить
         // режим (--adaptive / --fixed) и записать диагностику в
         // tetris_diag.log (--diag). Убрать после проверки Adaptive-пути.
+        // Парсим до раннего mode con, чтобы override режима учли.
         bool writeDiag = false;
         int argCount = 0;
         LPWSTR *argList = CommandLineToArgvW(GetCommandLineW(), &argCount);
@@ -213,6 +181,59 @@ namespace Tetris
             }
 
             (void)LocalFree(argList);
+        }
+
+        // Ранний mode con (только Fixed): ДО создания doubleBuffer. Резервный
+        // буфер наследует состояние консоли в момент создания: если консоль
+        // уже 80x25, doubleBuffer рождается 80x25 (буфер И окно), как и
+        // basicBuffer — первое переключение активного буфера не «прыгает»
+        // (мерцание при старте). В Adaptive размер не форсируем: буфер следует
+        // за окном (управляет терминал), принудительный 80x25 ломает рендер.
+        if (g_console.mode == ConsoleMode::Fixed)
+        {
+            system("mode con cols=80 lines=25");
+        }
+
+        GetWindowRect(g_console.hWnd, &g_console.basicRect);
+        g_console.basicBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        g_console.doubleBuffer = CreateConsoleScreenBuffer(
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            NULL,
+            CONSOLE_TEXTMODE_BUFFER,
+            NULL
+        );
+
+        if (g_console.basicBuffer == INVALID_HANDLE_VALUE ||
+            g_console.doubleBuffer == INVALID_HANDLE_VALUE)
+        {
+            MyErrorExit(L"CreateConsoleScreenBuffer");
+            return;
+        }
+
+        // Truecolor (24-бит, VT) — только Adaptive (Windows Terminal).
+        // VT включается на обоих буферах: новый кадр рисуется в basicBuffer
+        // (через wcout), предыдущий показывается в doubleBuffer (через
+        // WriteConsoleW) — оба должны принимать VT-последовательности.
+        // В Fixed конвейер идёт через CHAR_INFO (16 атрибутов), 24-бит
+        // не удержится — остаёмся на 16-цветном пути (SetConsoleTextAttribute).
+        if (g_console.mode == ConsoleMode::Adaptive)
+        {
+            bool vtOk = false;
+            DWORD consoleMode = 0;
+            if (GetConsoleMode(g_console.basicBuffer, &consoleMode)
+                && SetConsoleMode(g_console.basicBuffer, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            {
+                vtOk = true;
+            }
+
+            if (vtOk
+                && GetConsoleMode(g_console.doubleBuffer, &consoleMode)
+                && SetConsoleMode(g_console.doubleBuffer, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            {
+                g_console.truecolor = true;
+            }
         }
 
         // Шрифт 24px — только в фиксированном режиме (conhost), где мы сами
@@ -249,7 +270,26 @@ namespace Tetris
         // буфер следует за окном, фактический размер прочитаем ниже.
         if (g_console.mode == ConsoleMode::Fixed)
         {
+            // Повторный mode con ПОСЛЕ смены шрифта: смена шрифта на 24px
+            // может ресайзить буфер/окно (шрифт крупнее → пиксельный размер
+            // окна меняется), поэтому 80x25 переставляем после неё.
+            // (Первичный mode con — ДО создания doubleBuffer, см. выше:
+            // именно он убирает мерцание при старте, т.к. doubleBuffer
+            // наследует состояние консоли в момент создания.)
             system("mode con cols=80 lines=25");
+
+            // Страховка: приводим ОБА буфера и их ОКНА к одному 80x25.
+            // При переключении активного буфера окно консоли принимает
+            // размер ОКНА нового буфера: если окна различаются даже на
+            // пиксель, переключение видно как «прыжок» окна. mode con
+            // выставляет окно только активного буфера, поэтому окна
+            // явно выравниваем для обоих (после установки размера буфера,
+            // чтобы прямоугольник окна гарантированно влезал в буфер).
+            (void)SetConsoleScreenBufferSize(g_console.basicBuffer, COORD{ 80, 25 });
+            (void)SetConsoleScreenBufferSize(g_console.doubleBuffer, COORD{ 80, 25 });
+            const SMALL_RECT frameWindow{ 0, 0, 79, 24 };
+            (void)SetConsoleWindowInfo(g_console.basicBuffer, TRUE, &frameWindow);
+            (void)SetConsoleWindowInfo(g_console.doubleBuffer, TRUE, &frameWindow);
         }
 
         g_console.hWnd = GetConsoleWindow();
@@ -338,15 +378,44 @@ namespace Tetris
         }
     }
 
+    // Адаптивный режим: показывает предыдущий кадр в резервном буфере
+    // (doubleBuffer) и переключает на него. Новый кадр рисуется в основной
+    // (basicBuffer) буфер, на который wcout пишет независимо от активного.
+    // Предыдущий кадр — сохранённая VT-строка (prevFrame), пишется через
+    // WriteConsoleW: CHAR_INFO-копия на conpty ненадёжна и теряет 24-бит.
+    static void ShowPrevFrame()
+    {
+        // Сначала очищаем doubleBuffer (иначе на первом кадре, когда
+        // prevFrame пуст, активация покажет старый контент — мерцание).
+        const DWORD totalCells = static_cast<DWORD>(
+            g_console.csbi.dwSize.X * g_console.csbi.dwSize.Y);
+        DWORD written = 0;
+        (void)FillConsoleOutputCharacterW(
+            g_console.doubleBuffer, L' ', totalCells, COORD{ 0, 0 }, &written);
+
+        if (!g_console.prevFrame.empty())
+        {
+            (void)WriteConsoleW(
+                g_console.doubleBuffer,
+                g_console.prevFrame.c_str(),
+                static_cast<DWORD>(g_console.prevFrame.size()),
+                &written,
+                nullptr);
+        }
+
+        SetConsoleActiveScreenBuffer(g_console.doubleBuffer);
+    }
+
     void DoubleBufferingBegin()
     {
         if (g_console.mode == ConsoleMode::Adaptive)
         {
-            // Адаптивный режим: рисуем напрямую в видимый буфер, без двойной
-            // буферизации. Копии и переключение буферов в conpty дают
-            // артефакты и мерцание: кадр пишется в один буфер, а показывается
-            // другой. Видимый буфер (basicBuffer) остаётся активным.
+            // Адаптивный режим: двойная буферизация. Показываем предыдущий
+            // кадр в doubleBuffer (видимый), новый рисуем в basicBuffer
+            // (скрытый), в конце кадра DoubleBufferingEnd переключает на
+            // basicBuffer — атомарная смена кадра, без мерцания и «рулона».
             UpdateAdaptiveBuffer();
+            ShowPrevFrame();
             return;
         }
 
@@ -397,11 +466,9 @@ namespace Tetris
 
     void DoubleBufferingEnd()
     {
-        if (g_console.mode == ConsoleMode::Adaptive)
-        {
-            return; // рисуем напрямую в видимый буфер, переключать нечего
-        }
-
+        // Оба режима: переключаем активный буфер на основной (basicBuffer),
+        // в который нарисован новый кадр. Адаптивный: атомарная смена кадра;
+        // фиксированный: как раньше.
         SetConsoleActiveScreenBuffer(g_console.basicBuffer);
     }
 
@@ -409,9 +476,13 @@ namespace Tetris
     {
         // Адаптивный режим: основной буфер следует за окном (conpty),
         // поэтому перечитываем фактический размер и пересчитываем
-        // смещение кадра (центрирование). При ресайзе очищаем буфер —
-        // иначе старый кадр, нарисованный со старым смещением, остаётся
-        // артефактом вне области нового кадра.
+        // смещение кадра (центрирование). При ресайзе ресайзим оба буфера
+        // (doubleBuffer — отдельный, за окном не следует) и очищаем их,
+        // чтобы старый кадр, нарисованный со старым смещением, не остался
+        // артефактом вне области нового кадра. prevFrame при этом НЕ
+        // сбрасываем — ShowPrevFrame перерисует его в doubleBuffer, и экран
+        // не станет пустым на кадре ресайза (без мерцания); новый кадр
+        // заменит его в следующем кадре.
         if (!GetConsoleScreenBufferInfo(g_console.basicBuffer, &g_console.csbi))
         {
             MyErrorExit(L"GetConsoleScreenBufferInfo");
@@ -424,7 +495,13 @@ namespace Tetris
         {
             g_console.lastBufSize = g_console.csbi.dwSize;
 
+            (void)SetConsoleScreenBufferSize(g_console.doubleBuffer, g_console.csbi.dwSize);
             ClearConsoleBuffer();
+            // prevFrame НЕ сбрасываем: ShowPrevFrame перерисует старый кадр
+            // (со старым смещением) в doubleBuffer, и экран не станет пустым
+            // на кадре ресайза (без мерцания). Старый кадр живёт ровно один
+            // кадр, затем заменяется новым (prevFrame обновляется в
+            // ViewGameField), поэтому артефакта не остаётся.
         }
     }
 
@@ -435,20 +512,23 @@ namespace Tetris
             return; // фиксированный режим: кадр = весь буфер, хвостов нет
         }
 
-        // Очистка всего буфера пробелами: линейно от (0,0) с переносом
+        // Очистка обоих буферов пробелами: линейно от (0,0) с переносом
         // по ширине консоли, всего width*height ячеек. Последний
         // параметр — указатель на счётчик записанных символов (LPDWORD).
+        // Очищаем и doubleBuffer (видимый), и basicBuffer: при возврате
+        // из паузы в видимом буфере остаётся текст меню, в основном —
+        // старый кадр; оба должны быть чистыми перед новым кадром.
         const DWORD totalCells = static_cast<DWORD>(
             g_console.csbi.dwSize.X * g_console.csbi.dwSize.Y);
         DWORD written;
+        (void)FillConsoleOutputCharacterW(
+            g_console.doubleBuffer, L' ', totalCells, COORD{ 0, 0 }, &written);
         (void)FillConsoleOutputCharacterW(
             g_console.basicBuffer, L' ', totalCells, COORD{ 0, 0 }, &written);
     }
 
     // Truecolor (24-бит, только Adaptive): добавляет в строку
     // VT-последовательность цвета ESC[38;2;R;G;Bm. rgb — индекс в kColorRgb.
-    // Строка собирается целиком и выводится одним записом (быстрее, чем
-    // по-символьно через std::wcout).
     void AppendTrueColor(std::wstring &row, int rgb)
     {
         const Rgb &c = kColorRgb[rgb];
@@ -458,6 +538,16 @@ namespace Tetris
         row += std::to_wstring(c.g);
         row += L";";
         row += std::to_wstring(c.b);
+        row += L"m";
+    }
+
+    // 16-цвет (только Adaptive): добавляет в строку VT-последовательность
+    // цвета ESC[38;5;Nm (ANSI 16, палитра терминала). color — индекс
+    // в Colors (0..15), как в SetConsoleTextAttribute.
+    void AppendAnsi16Color(std::wstring &row, int color)
+    {
+        row += L"\x1b[38;5;";
+        row += std::to_wstring(color);
         row += L"m";
     }
 

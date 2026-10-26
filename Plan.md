@@ -4,31 +4,6 @@
 
 ## 1. В работе
 
-### Двойная буферизация в Adaptive (приоритет)
-
-**Проблема:** в Adaptive кадр рисуется напрямую в видимый буфер — truecolor-заставка «раскатывается» (появляется по строкам), есть мерцание. Дешёвый фикс «одним записом» не убрал суть: терминал рендерит VT-поток инкрементально. Для анимаций и стабильного UI нужна атомарная смена кадра.
-
-**Цель:** кадр появляется атомарно (без мерцания и «рулона»); Fixed не трогаем.
-
-**Механизм (как в Fixed, с учётом Adaptive):**
-- `wcout`/stdout пишется в `basicBuffer` (буфер, к которому привязан stdout) **независимо от активного** — на этом работает Fixed. Значит: рисуем новый кадр в скрытый `basicBuffer`, видимым держим `doubleBuffer` с предыдущим кадром; в конце кадра `SetConsoleActiveScreenBuffer(basicBuffer)` — атомарное переключение (терминал мгновенно показывает новый буфер).
-- **Truecolor:** CHAR_INFO-копия теряет 24-бит, поэтому предыдущий кадр в `doubleBuffer` пишем через `WriteConsoleW` (VT-последовательности, truecolor сохраняется); храним строку предыдущего кадра (`prevFrame`).
-- **16-цвет (игра):** CHAR_INFO-копия кадра `basicBuffer → doubleBuffer` (как в Fixed, `ComputeCopyRegion`) — truecolor не involved, деградации нет.
-- **Ресайз:** ресайзим оба буфера под фактический размер, очищаем, сбрасываем `prevFrame` (старые CUP-смещения неактуальны).
-
-**Чекбоксы:**
-- [ ] `ConsoleRenderer`: поле `prevFrame` (строка truecolor-кадра).
-- [ ] `ProgramSettings`: `ENABLE_VIRTUAL_TERMINAL_PROCESSING` на `doubleBuffer` (чтобы `WriteConsoleW` в него принимал VT).
-- [ ] `DoubleBufferingBegin` (Adaptive): truecolor — очистить `doubleBuffer`, `WriteConsoleW(doubleBuffer, prevFrame)`, активировать `doubleBuffer`; 16-цвет — CHAR_INFO-копия кадра, активировать `doubleBuffer`; ресайз — ресайз `doubleBuffer`, очистка, сброс `prevFrame`.
-- [ ] `DoubleBufferingEnd` (Adaptive): активировать `basicBuffer`.
-- [ ] `ViewGameField` (truecolor): собрать кадр, `wcout << frame` (в `basicBuffer`), `prevFrame = frame`.
-- [ ] `ViewGameField` (16-цвет, Adaptive): без изменений (рисуем в скрытый `basicBuffer`).
-- [ ] Сборка без ошибок и предупреждений.
-- [ ] Проверка в WT: заставка появляется атомарно (без «рулона»/мерцания).
-- [ ] Проверка в WT: игровой цикл (16-цвет) — без мерцания.
-- [ ] Проверка в WT: ресайз окна во время игры — без артефактов.
-- [ ] Проверка Fixed (conhost): без изменений, работает как раньше.
-
 ### Truecolor в консоли (Windows Terminal / Adaptive)
 
 **Согласованные решения:**
@@ -39,19 +14,20 @@
 - Надписи (счёт, уровень) **пока не раскрашиваем**; **вспышка level up** — делаем, но **не мешать на высоких уровнях** (решение по таймингу/порогу уровня — в чекбоксе).
 - **Fixed (conhost) truecolor не получает** — работаем только с Windows Terminal (Adaptive); Fixed автоматически остаётся на 16 цветах (гейт по режиму). В «Отложенные» — пометка «Truecolor в Fixed (conhost)».
 
-**Блокирующий предшественник:** «Двойная буферизация в Adaptive (приоритет)» (блок выше). Пока она не готова, truecolor-заставка «раскатывается» (терминал рендерит VT-поток инкрементально) — чекбокс Фазы 1 «проверка truecolor-заставки в WT» закрыт только после неё.
+**Предшественник — готов:** «Двойная буферизация в Adaptive» завершена (блок 4) — кадр появляется атомарно, truecolor-заставка не «раскатывается».
 
 **Чекбоксы:**
 
 - [x] **Фаза 0 — VT-проба (де-риск).** Включить `ENABLE_VIRTUAL_TERMINAL_PROCESSING`, вывести одну truecolor-строку через `std::wcout` (у нас `_O_U16TEXT`), проверить в WT. Если VT в unicode-режиме не работает — остановиться и обсудить способ вывода, не писать остальное.
-- [ ] **Фаза 1 — фундамент.**
+- [x] **Фаза 1 — фундамент.**
   - [x] RGB-палитра в `GameData.h` (маппинг `Colors` → RGB, header-only).
   - [x] Включение VT в `ProgramSettings()` **только для Adaptive** + флаг `g_console.truecolor`.
   - [x] Хелперы в `Console`: `SetTrueColor(rgb)` / `ResetColor()` (выдают VT-последовательность).
-  - [x] `ViewGameField`: параметр `useTruecolor`, truecolor-ветка для ячеек `█`; горячий игровой путь не трогаем (по умолчанию `false`).
+  - [x] `ViewGameField`: параметр `useTruecolor`, truecolor-ветка для ячеек `█`; игровые кадры (`CreateGameField`) и анимация стирания линий (`ClearLines`) вызывают `ViewGameField(frame, true)` — в Adaptive всё рисуется truecolor (`kColorRgb`), иначе цвета «прыгали» (ANSI 16 палитры терминала vs `kColorRgb`).
   - [x] Заставка → truecolor.
   - [x] Вынести **все** глифы пиксельного шрифта в отдельный файл (сейчас `kLogoFont` в `Splash.cpp`); добавить глифы для «GAME OVER» / «YOU WIN» (G, A, M, E, O, V, R, U, Y, W, N — T, I, S уже есть).
-  - [ ] Сборка без ошибок и предупреждений; проверка truecolor-заставки в WT (блокируется «Двойная буферизация в Adaptive»).
+  - [x] Сборка без ошибок и предупреждений.
+  - [x] Проверка truecolor-заставки в WT — подтверждено: заставка атомарно, цвета на местах.
 - [ ] **Фаза 2 — экраны Game Over / You Win.**
   - [ ] Определить условие победы: достижение 25-го уровня / счёт ≥ 8000 (ввести флаг победы в игровой цикл).
   - [ ] `ShowGameOver(score, level)` и `ShowWin(score, level)`: пиксельное сообщение + счёт/уровень + «Press any key», truecolor, ждём клавишу.
@@ -93,3 +69,5 @@ Truecolor (24-бит, VT `\x1b[38;2;R;G;Bm`) введён только для Ad
 ## 4. Завершённые
 
 - Адаптивный рендер для Windows Terminal — закоммичено (2026-10-26, `3b564ec`), документация — `DevDocs/adaptive-rendering.md`.
+- Двойная буферизация в Adaptive — кадр появляется атомарно (без «рулона»/мерцания), truecolor-кадр через `WriteConsoleW`/`prevFrame`, ресайз без мерцания; проверено в WT — документация — `DevDocs/adaptive-rendering.md` (решения 2, 5).
+- Стартовое мерцание в Fixed (conhost) — ранний `mode con` до создания `doubleBuffer` (только Fixed) + выравнивание окон буферов; проверено в conhost — документация — `DevDocs/adaptive-rendering.md` (решение 3).

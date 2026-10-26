@@ -195,7 +195,12 @@ namespace Tetris
                     mask & 4 ? gameField[i + 1].first[CURRENT_X1 + j] = L' ' : L'i';
                     mask & 2 ? gameField[i + 2].first[CURRENT_X1 + j] = L' ' : L'i';
                     mask & 1 ? gameField[i + 3].first[CURRENT_X1 + j] = L' ' : L'i';
-                    ViewGameField(gameField);
+                    // true: в Adaptive (truecolor) кадры анимации стирания
+                    // рисуются той же палитрой (kColorRgb), что и обычные
+                    // кадры. Иначе (useTruecolor=false) они шли бы ANSI 16
+                    // (палитра терминала) и цвета «прыгали» на момент стирания.
+                    // В Fixed truecolor недоступен — 16-цветный путь, как и раньше.
+                    ViewGameField(gameField, true);
                 }
 
                 // Кумулятивный подсчёт очков:

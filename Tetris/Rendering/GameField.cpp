@@ -98,16 +98,18 @@ namespace Tetris
             }
         }
 
-        ViewGameField(gameField);
+        // useTruecolor = true: в Adaptive (Windows Terminal) кадр рисуется
+        // truecolor-последовательностями (kColorRgb, классическая палитра
+        // Tetris), а не ANSI 16 (палитра терминала). Иначе цвета фигур в игре
+        // расходились бы с цветами заставки и с ожидаемой классической палитрой.
+        // В Fixed (conhost) truecolor недоступен — используется 16-цветный путь.
+        ViewGameField(gameField, true);
     }
 
     void ViewGameField(
         const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
         bool useTruecolor)
     {
-        // Truecolor доступен только в Adaptive (VT включён в ProgramSettings);
-        // в Fixed — 16-цветный путь.
-        const bool truecolor = useTruecolor && g_console.truecolor;
         DoubleBufferingBegin();
 
         // Смещение кадра в буфере: в адаптивном режиме — центрирование
@@ -115,20 +117,44 @@ namespace Tetris
         // в фиксированном — (0,0).
         const COORD offset = g_console.frameOffset;
 
-        if (truecolor)
+        if (g_console.truecolor)
         {
-            // Truecolor: весь кадр собирается в одну строку и выводится
-            // одним записом. Консоль (conpty/Windows Terminal) рендерит
-            // инкрементально — построчный вывод (24 записи + flush на строку)
-            // давал «рулон»: кадр появлялся по строкам. Один запис = один
-            // кадр терминала = кадр появляется атомарно. Позиционирование
-            // строк — VT-последовательностью CUP (ESC[row;colH], 1-based),
-            // т.к. SetConsoleCursorPosition в середине одного записа
-            // вызвать нельзя.
+            // Адаптивный режим: весь кадр собирается в одну строку с
+            // VT-последовательностями и выводится одним записом в скрытый
+            // basicBuffer. Позиционирование строк — CUP (ESC[row;colH],
+            // 1-based), т.к. SetConsoleCursorPosition в середине одного
+            // записа вызвать нельзя. Атомарность кадра обеспечивает двойная
+            // буферизация: предыдущий кадр показывается в doubleBuffer
+            // (DoubleBufferingBegin), новый рисуется в basicBuffer, в конце
+            // DoubleBufferingEnd переключает активный буфер — терминал
+            // мгновенно показывает новый кадр. useTruecolor — truecolor
+            // (ESC[38;2;R;G;Bm, kColorRgb), иначе 16-цвет (ANSI 16,
+            // ESC[38;5;Nm, палитра терминала).
+            auto appendColor = [useTruecolor](std::wstring &s, int c)
+            {
+                if (useTruecolor)
+                {
+                    AppendTrueColor(s, c);
+                }
+                else
+                {
+                    AppendAnsi16Color(s, c);
+                }
+            };
+
             std::wstring frame;
             int row = 0;
             const int bufHeight = static_cast<int>(g_console.csbi.dwSize.Y);
             const int maxCols = static_cast<int>(g_console.csbi.dwSize.X) - offset.X;
+
+            // Начало кадра — LIGHTGRAY, чтобы текст (счёт, уровень) не
+            // унаследовал цвет последнего блока предыдущего кадра.
+            // lastColor ведётся через весь кадр: цвет терминала не сбрасывается
+            // между строками, поэтому сброс делаем точечно — перед видимым
+            // символом (не пробелом), если текущий цвет — цвет блока. Иначе
+            // текст (счёт, уровень, рамка) унаследует цвет последнего блока.
+            appendColor(frame, static_cast<int>(Colors::LIGHTGRAY));
+            int lastColor = static_cast<int>(Colors::LIGHTGRAY);
 
             for (const auto &i : gameField)
             {
@@ -152,7 +178,6 @@ namespace Tetris
 
                 // VT-последовательность цвета — только при смене цвета, а не
                 // на каждую ячейку (цвета в логотипе идут полосами).
-                int lastColor = -1;
                 for (std::size_t j = 0; j < iFirstSize; ++j)
                 {
                     if (i.first[j] == L'█')
@@ -160,9 +185,17 @@ namespace Tetris
                         const int color = i.second[j];
                         if (color != lastColor)
                         {
-                            AppendTrueColor(frame, color);
+                            appendColor(frame, color);
                             lastColor = color;
                         }
+                        frame += i.first[j];
+                    }
+                    else if (i.first[j] != L' ' && lastColor != static_cast<int>(Colors::LIGHTGRAY))
+                    {
+                        // Видимый символ (не пробел): сбрасываем цвет блока на
+                        // LIGHTGRAY, иначе он унаследует цвет последнего блока.
+                        appendColor(frame, static_cast<int>(Colors::LIGHTGRAY));
+                        lastColor = static_cast<int>(Colors::LIGHTGRAY);
                         frame += i.first[j];
                     }
                     else
@@ -171,21 +204,18 @@ namespace Tetris
                     }
                 }
 
-                // Сброс на LIGHTGRAY, чтобы текст вне блоков не унаследовал
-                // цвет последнего блока.
-                if (lastColor != -1)
-                {
-                    AppendTrueColor(frame, static_cast<int>(Colors::LIGHTGRAY));
-                }
-
                 ++row;
             }
 
             std::wcout << frame;
+            std::wcout.flush();
+            g_console.prevFrame = frame;
             DoubleBufferingEnd();
             return;
         }
 
+        // Фиксированный режим (и фолбэк Adaptive без VT): 16-цвет,
+        // посимвольно через SetConsoleTextAttribute + wcout.
         // Доступная ширина строки: в узком буфере строка обрезается,
         // иначе wcout перенесёт хвост на следующую строку и кадр «поедет».
         const int maxCols = static_cast<int>(g_console.csbi.dwSize.X) - offset.X;
