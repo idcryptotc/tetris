@@ -17,7 +17,8 @@ Tetris/
 ├─ Main.cpp              ← точка входа
 ├─ Core/                 ← игровая логика: Tetris.h/.cpp, Game.h/.cpp,
 │                          Figure.h/.cpp, FigureGenerator.h/.cpp, GameData.h
-├─ Rendering/            ← рендер: Console.h/.cpp, GameField.h/.cpp, Splash.h/.cpp
+├─ Rendering/            ← рендер: Console.h/.cpp, GameField.h/.cpp, Splash.h/.cpp,
+│                          GameEnd.h/.cpp, PixelFont.h
 ├─ Input/                ← ввод и настройки: Keys.h, Settings.h
 └─ Menu/                 ← меню: GameMenu.h/.cpp
 ```
@@ -30,6 +31,8 @@ Tetris/
 | `Tetris/Core/Game.h` / `Tetris/Core/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
 | `Tetris/Rendering/GameField.h` / `Tetris/Rendering/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
 | `Tetris/Rendering/Splash.h` / `Tetris/Rendering/Splash.cpp` | Заставка при запуске: логотип «TETRIS» + ряд фигур, висит до нажатия любой клавиши (`ShowSplash`) |
+| `Tetris/Rendering/GameEnd.h` / `Tetris/Rendering/GameEnd.cpp` | Экраны конца партии: «GAME OVER» (`ShowGameOver`) и «YOU WIN» (`ShowWin`) — пиксельное сообщение + счёт/уровень, ожидание Enter |
+| `Tetris/Rendering/PixelFont.h` | Пиксельный шрифт 5×7 (26 букв латиницы) — логотип заставки и экраны конца партии |
 | `Tetris/Menu/GameMenu.h` / `Tetris/Menu/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
 | `Tetris/Core/Figure.h` / `Tetris/Core/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
 | `Tetris/Core/FigureGenerator.h` / `Tetris/Core/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |
@@ -74,7 +77,7 @@ Tetris/
 - Каждый файл включает **то, что использует сам** (PCH нет). `std::size_t` требует явного `#include <cstddef>`.
 - **`using namespace` запрещён** — только точечные `using`-декларации (по одному символу на имя).
 - Нежелательные предупреждения анализа (например, C6031 «возвращаемое значение пропущено») гасить **явным приведением `(void)вызов()`** с комментарием, а не `#pragma warning(disable: ...)`.
-- Заголовки `GameData.h`/`Keys.h`/`Settings.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h` и `FigureGenerator.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`/`GameField.cpp`/`GameMenu.cpp`/`FigureGenerator.cpp`. `Tetris.h` — только объявление публичной функции, определение — в `Tetris.cpp`.
+- Заголовки `GameData.h`/`Keys.h`/`Settings.h`/`PixelFont.h` — header-only: всё, что в них объявлено, должно быть `inline`/`constexpr`/`inline const`. `Figure.h`, `Console.h`, `Game.h`, `GameField.h`, `GameMenu.h`, `GameEnd.h` и `FigureGenerator.h` — обычные заголовки с определениями в `Figure.cpp`/`Console.cpp`/`Game.cpp`/`GameField.cpp`/`GameMenu.cpp`/`GameEnd.cpp`/`FigureGenerator.cpp`. `Tetris.h` — только объявление публичной функции, определение — в `Tetris.cpp`.
 
 ### Форматирование: два конфига, две роли
 
@@ -99,7 +102,7 @@ Tetris/
 3. Форматирование C++ — только по `.clang-format`; `.editorconfig` не трогать для C++-правил. Подробнее — в разделе «Стиль кода → Форматирование».
 4. После изменений: сборка без ошибок **и** без предупреждений.
 5. `README.md` **всегда должен быть актуален**: при изменении функциональности, структуры файлов, управления или технологий обновляйте соответствующие разделы README в том же изменении.
-6. При правке `README.md` сохранять кодировку UTF-8 (в файле есть эмодзи, стрелки и box-drawing символы).
+6. При правке `README.md` сохранять кодировку UTF-8 (в файле есть эмодзи, стрелки и box-drawing символы). **Смену кодировки** (конвертация 1251 → UTF-8, снятие BOM, проверка байтов) делать **через PowerShell** (`run_powershell`): инструменты записи `write_file`/`replace_file_content` пишут в системной кодировке (1251) и **ломают** эмодзи/box-drawing (превращают в `?`). Если PowerShell недоступен — **попросить пользователя** выполнить команду вручную.
 7. Не коммитить артефакты: `Debug/`, `Release/`, `*.suo`, `*.sdf`, `.vs/`.
 8. Если сборка неуспешна по неявным причинам (нет вывода сборки, пустой список ошибок) — **не повторять** попытку с другими параметрами, это не поможет: скорее всего, есть ошибки, которые не видны агенту. Звать пользователя.
 9. `Plan.md` в корне решения — место для «отложенных» мыслей и идей, пока не реализованных. Блоки по приоритету: **1. В работе** → **2. Отложенные** → **3. Оставлено про запас (диагностика)** → **4. Завершённые**. Перед работой по отложенной идее сверяйтесь с этим файлом; новые отложенные мысли записывайте в блок 2. Завершённую задачу выносите в `DevDocs/` — один документ на задачу (шаблон: `DevDocs/adaptive-rendering.md`: статус/коммит → проблема → решение → ключевые решения с обоснованием → что проверено → ограничения); в блоке 4 остаётся однострочный указатель. Блок 4 не раздувать: если вырастет за ~10 строк — вычищаем старейшие (детали и так в git и `DevDocs/`). Док пишется, только если есть неочевидные решения; мелкие правки — только коммит-сообщение.
