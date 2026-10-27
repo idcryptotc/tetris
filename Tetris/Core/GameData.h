@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <map>
 #include <string>
@@ -114,6 +114,11 @@ namespace Tetris
         2000,2300,2600,2900,3200,
         4000,5000,6000,7000,8000
     };
+
+    // Максимальный уровень (условие победы). Достижение этого уровня
+    // завершает партию экраном «YOU WIN». Равен числу уровней
+    // (LEVEL_TIME_STEP / LEVEL_SCORE содержат по 25 элементов).
+    constexpr int MAX_LEVEL = 25;
 
     // Координаты и раскладка UI.
     constexpr int COUNT_STEP_CHAPTER = 8;

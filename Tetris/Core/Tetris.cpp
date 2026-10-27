@@ -3,6 +3,7 @@
 #include "Game.h"
 #include "GameData.h"
 #include "../Rendering/Console.h"
+#include "../Rendering/GameEnd.h"
 #include "../Rendering/GameField.h"
 #include "../Menu/GameMenu.h"
 #include "../Input/Keys.h"
@@ -34,7 +35,14 @@ namespace Tetris
         {
             ClearKeyboardBuffer();
             ClearLines(gameStack, nextFigure, score, gameField, levelGame);
+            // Уровень ограничен MAX_LEVEL: иначе LEVEL_TIME_STEP[levelGame]
+            // (25 элементов, индексы 0..24) при levelGame = 25 — выход за
+            // границы (OOB). Победа проверяется ниже.
             CheckScoreForLevel(score, levelGame);
+            if (levelGame > MAX_LEVEL)
+            {
+                levelGame = MAX_LEVEL;
+            }
             currentFigure = nextFigure;
             currentFigure.SetUse(true);
             figureId = RandomFigureId();
@@ -44,6 +52,15 @@ namespace Tetris
 
             if (CheckGameOver(gameStack))
             {
+                ShowGameOver(score, levelGame);
+                return true;
+            }
+
+            // Победа: достигнут MAX_LEVEL. Проверяется после game over,
+            // т.к. переполнение стека имеет приоритет (партия проиграна).
+            if (levelGame >= MAX_LEVEL)
+            {
+                ShowWin(score, levelGame);
                 return true;
             }
 

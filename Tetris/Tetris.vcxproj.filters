@@ -72,6 +72,9 @@
     <ClInclude Include="Rendering\PixelFont.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\GameEnd.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -100,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="Menu\GameMenu.cpp">
       <Filter>Файлы исходного кода\Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\GameEnd.cpp">
+      <Filter>Файлы исходного кода</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
