@@ -20,7 +20,8 @@ namespace Tetris
         std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
         const std::vector<std::vector<std::pair<int, int>>> &gameStack,
         const unsigned int &score,
-        const int &level
+        const int &level,
+        bool showLevelUp
     )
     {
         int idFigure = nextFigure.GetId();
@@ -95,6 +96,26 @@ namespace Tetris
                         gameField[y].second[x + 1] = colorFigureAsInt;
                     }
                 }
+            }
+        }
+
+        // Вспышка level up: «LEVEL N» по центру поля (оверлей поверх кадра,
+        // без паузы). Белый текст: цвет ячейки задаётся second[j] != 0
+        // (ViewGameField красит текст цветом ячейки). Показывается в раунде,
+        // в котором поднят уровень, и гаснет, когда фигура прошла треть поля
+        // (y >= LEVEL_UP_HIDE_Y) — чтобы не прятать падающую фигуру.
+        if (showLevelUp && currentFigure.GetUse()
+            && currentFigure.GetPositionY() < LEVEL_UP_HIDE_Y)
+        {
+            const std::wstring banner = L"LEVEL " + std::to_wstring(level);
+            const int bannerRow = (CURRENT_Y1 + CURRENT_Y2) / 2;
+            const int fieldWidth = CURRENT_X2 - CURRENT_X1 + 1;
+            const int bannerX = (fieldWidth - static_cast<int>(banner.size())) / 2;
+            for (int i = 0; i < static_cast<int>(banner.size()); ++i)
+            {
+                const int x = CURRENT_X1 + bannerX + i;
+                gameField[bannerRow].first[x] = banner[i];
+                gameField[bannerRow].second[x] = static_cast<int>(Colors::WHITE);
             }
         }
 
@@ -190,12 +211,20 @@ namespace Tetris
                         }
                         frame += i.first[j];
                     }
-                    else if (i.first[j] != L' ' && lastColor != static_cast<int>(Colors::LIGHTGRAY))
+                    else if (i.first[j] != L' ')
                     {
-                        // Видимый символ (не пробел): сбрасываем цвет блока на
-                        // LIGHTGRAY, иначе он унаследует цвет последнего блока.
-                        appendColor(frame, static_cast<int>(Colors::LIGHTGRAY));
-                        lastColor = static_cast<int>(Colors::LIGHTGRAY);
+                        // Видимый символ (не пробел): цвет ячейки
+                        // (second[j] != 0) приоритетен — напр. вспышка
+                        // «LEVEL N». Иначе сбрасываем на LIGHTGRAY, чтобы
+                        // текст не унаследовал цвет последнего блока.
+                        const int textColor = i.second[j] != 0
+                            ? i.second[j]
+                            : static_cast<int>(Colors::LIGHTGRAY);
+                        if (textColor != lastColor)
+                        {
+                            appendColor(frame, textColor);
+                            lastColor = textColor;
+                        }
                         frame += i.first[j];
                     }
                     else
@@ -252,6 +281,14 @@ namespace Tetris
             {
                 if (i.first[j] == L'█')
                 {
+                    SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(i.second[j]));
+                    std::wcout << i.first[j];
+                    SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(Colors::LIGHTGRAY));
+                }
+                else if (i.first[j] != L' ' && i.second[j] != 0)
+                {
+                    // Видимый символ с цветом ячейки (напр. вспышка «LEVEL N»):
+                    // рисуем цветом ячейки, затем сбрасываем на LIGHTGRAY.
                     SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(i.second[j]));
                     std::wcout << i.first[j];
                     SetConsoleTextAttribute(g_console.basicBuffer, (WORD)(Colors::LIGHTGRAY));

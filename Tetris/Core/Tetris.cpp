@@ -35,20 +35,25 @@ namespace Tetris
         {
             ClearKeyboardBuffer();
             ClearLines(gameStack, nextFigure, score, gameField, levelGame);
-            // Уровень ограничен MAX_LEVEL: иначе LEVEL_TIME_STEP[levelGame]
-            // (25 элементов, индексы 0..24) при levelGame = 25 — выход за
+            // Уровень ограничен MAX_LEVEL: иначе LEVEL_TIME_STEP[levelGame - 1]
+            // (25 элементов, индексы 0..24) при levelGame = 26 — выход за
             // границы (OOB). Победа проверяется ниже.
+            const int prevLevel = levelGame;
             CheckScoreForLevel(score, levelGame);
             if (levelGame > MAX_LEVEL)
             {
                 levelGame = MAX_LEVEL;
             }
+            // Вспышка level up: показывается в течение раунда, в котором
+            // поднят уровень (оверлей поверх кадра, без паузы). На высоких
+            // уровнях раунд короткий — вспышка не мешает.
+            const bool showLevelUp = levelGame > prevLevel;
             currentFigure = nextFigure;
             currentFigure.SetUse(true);
             figureId = RandomFigureId();
             figurePosition = PositionById(figureId);
             nextFigure.SetBasicParameters(figureId, figurePosition);
-            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
 
             if (CheckGameOver(gameStack))
             {
@@ -76,22 +81,22 @@ namespace Tetris
                     if (IsKeyPressed(KeyFor(BindingAction::LEFT)))
                     {
                         TryMove(currentFigure, gameStack, MoveDirection::Left, Actions::LEFT);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::RIGHT)))
                     {
                         TryMove(currentFigure, gameStack, MoveDirection::Right, Actions::RIGHT);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_UP)))
                     {
                         TryMove(currentFigure, gameStack, MoveDirection::RotateUp, Actions::ROTATE);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_DOWN)))
                     {
                         TryMove(currentFigure, gameStack, MoveDirection::RotateDown, Actions::ROTATE);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::HARD_DROP)))
                     {
@@ -105,7 +110,7 @@ namespace Tetris
 
                             ++line;
                             ++stepProgress;
-                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                         }
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::EXIT)))
@@ -119,14 +124,16 @@ namespace Tetris
                                 // покрывает весь буфер — текст меню паузы в
                                 // левом верхнем углу остался бы видимым.
                                 ClearConsoleBuffer();
-                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
                                 break;
                             case MenuResult::Quit:
                                 return false;
                         }
                     }
 
-                    Sleep(LEVEL_TIME_STEP[levelGame] / COUNT_STEP_CHAPTER);
+                    // levelGame — 1-индексный (1..25), LEVEL_TIME_STEP —
+                    // 0-индексный (0..24): уровень 1 → 500 мс, 25 → 20 мс.
+                    Sleep(LEVEL_TIME_STEP[levelGame - 1] / COUNT_STEP_CHAPTER);
                     ++stepProgress;
                 }
 
@@ -139,7 +146,7 @@ namespace Tetris
                     }
                 }
 
-                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame);
+                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
             }
 
             nextFigure.SetUse(false);

@@ -90,6 +90,11 @@ namespace Tetris
     constexpr int MAX_FALL_LINES = 19;
     constexpr int LAST_FALL_LINE = MAX_FALL_LINES - 1;
 
+    // Вспышка level up: скрывается, когда фигура прошла треть поля
+    // (y >= 6 из 0..18), чтобы не прятать падающую фигуру. На этом моменте
+    // фигура на рядах 6..9 и ещё не доходит до баннера (ряд 12).
+    constexpr int LEVEL_UP_HIDE_Y = 6;
+
     // Геометрия фигуры и поля: шаг сдвига 2, квадрат 4x4, поле WIDTH x HEIGHT.
     constexpr int SHIFT_MULTIPLIER = 2;
     constexpr int SIDE_SQUARE = 4;

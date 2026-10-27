@@ -12,6 +12,8 @@ namespace Tetris
 
     // Собирает кадр (gameField) из стека, следующей и текущей фигур,
     // счёта и уровня, затем выводит его.
+    // showLevelUp — показать вспышку «LEVEL N» (повышение уровня: белый
+    // текст по центру поля, оверлей поверх кадра, без паузы).
     void CreateGameField
     (
         const Figure &nextFigure,
@@ -19,7 +21,8 @@ namespace Tetris
         std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
         const std::vector<std::vector<std::pair<int, int>>> &gameStack,
         const unsigned int &score,
-        const int &level
+        const int &level,
+        bool showLevelUp = false
     );
 
     // Выводит кадр в консоль (с двойной буферизацией).
