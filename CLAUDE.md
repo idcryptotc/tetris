@@ -1,4 +1,4 @@
-﻿# CLAUDE.md
+# CLAUDE.md
 
 Полное руководство для агентов — в [AGENTS.md](AGENTS.md). Кратко:
 

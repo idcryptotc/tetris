@@ -1,4 +1,4 @@
-﻿#include "../Core/GameData.h"
+#include "../Core/GameData.h"
 #include "../Input/Keys.h"
 #include "../Input/Settings.h"
 #include "GameMenu.h"

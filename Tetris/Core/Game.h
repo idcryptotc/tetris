@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Figure.h"
 #include "GameData.h"

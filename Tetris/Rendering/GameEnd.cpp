@@ -1,4 +1,4 @@
-﻿#include "Console.h"
+#include "Console.h"
 #include "GameEnd.h"
 #include "GameField.h"
 #include "PixelFont.h"

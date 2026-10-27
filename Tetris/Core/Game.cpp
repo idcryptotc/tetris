@@ -1,4 +1,4 @@
-﻿#include "Figure.h"
+#include "Figure.h"
 #include "Game.h"
 #include "GameData.h"
 #include "../Rendering/GameField.h"
