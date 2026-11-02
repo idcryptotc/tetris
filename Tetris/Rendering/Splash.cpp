@@ -152,6 +152,17 @@ namespace Tetris
     void ShowSplash()
     {
         CheckWindowParameters();
+
+        // Кадр не влезает в окно (Adaptive, буфер < 80x25) — пропускаем
+        // заставку: она была бы обрезана и выглядела сломанно. Поле тоже
+        // обрезано, но MessageBox (CheckWindowParameters) уже подсказывает
+        // увеличить окно. В Fixed буфер всегда 80x25, заставка влезает.
+        if (g_console.mode == ConsoleMode::Adaptive
+            && (g_console.csbi.dwSize.X < 80 || g_console.csbi.dwSize.Y < 25))
+        {
+            return;
+        }
+
         std::vector<std::pair<std::wstring, std::vector<int>>> frame = BuildSplashFrame();
         ViewGameField(frame, true);
         (void)_getch(); // ждём любую клавишу
