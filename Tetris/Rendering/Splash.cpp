@@ -40,46 +40,6 @@ namespace Tetris
         { { 2,0 }, { 0,1 }, { 1,1 }, { 2,1 } }, // L
     };
 
-    // Устанавливает один квадратный пиксель в кадре. Пиксель (px, py)
-    // попадает в ячейку (col = px, row = py / 2): верхняя половинка, если
-    // py чётная, нижняя — если нечётная. Если обе половинки заняты, ячейка
-    // становится █ (цвет — от верхней половинки, у ячейки один цвет).
-    static void SetPixel(
-        std::vector<std::pair<std::wstring, std::vector<int>>> &frame,
-        int px,
-        int py,
-        int color)
-    {
-        const int row = py / 2;
-        const int col = px;
-
-        wchar_t &ch = frame[row].first[col];
-        int &cellColor = frame[row].second[col];
-
-        const bool topOn = (ch == L'█') || (ch == L'▀');
-        const bool bottomOn = (ch == L'█') || (ch == L'▄');
-
-        if ((py % 2) == 0)
-        {
-            // Верхняя половинка.
-            if (!topOn)
-            {
-                ch = bottomOn ? L'█' : L'▀';
-                cellColor = color; // цвет ячейки — от верхней половинки
-            }
-        }
-        else
-        {
-            // Нижняя половинка.
-            if (!bottomOn)
-            {
-                ch = topOn ? L'█' : L'▄';
-                if (!topOn)
-                    cellColor = color; // █ — цвет уже от верха, не трогаем
-            }
-        }
-    }
-
     // Рисует одну фигуру из ряда в кадре. Каждая ячейка cells — блок
     // scale x scale из квадратных пикселей (8x8), поэтому фигура 4x2 при
     // scale = 2 занимает две строки символов (половинные блоки ▀ ▄ █).

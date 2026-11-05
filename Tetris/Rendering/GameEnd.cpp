@@ -53,7 +53,10 @@ namespace Tetris
 
     // Рисует одно пиксельное слово в кадре: буква kGlyphWidth x kGlyphHeight,
     // масштаб scale, зазор между буквами 2. Пропуск (glyph = -1) — просто
-    // сдвигает курсор, ничего не рисуя.
+    // сдвигает курсор, ничего не рисуя. Пиксели квадратные (SetPixel,
+    // половинные блоки ▀ ▄ █): буква высотой kGlyphHeight пикселей занимает
+    // (kGlyphHeight + 1) / 2 строки символов. startY — в пиксельных
+    // координатах (2 пикселя на строку символов).
     static void DrawPixelWord(
         std::vector<std::pair<std::wstring, std::vector<int>>> &frame,
         int startX,
@@ -85,8 +88,7 @@ namespace Tetris
                                 {
                                     const int fx = x + px * scale + sx;
                                     const int fy = startY + py * scale + sy;
-                                    frame[fy].first[fx] = L'█';
-                                    frame[fy].second[fx] = color;
+                                    SetPixel(frame, fx, fy, color);
                                 }
                             }
                         }
@@ -116,13 +118,16 @@ namespace Tetris
             row.second.assign(79, 0);
         }
 
-        // Пиксельное сообщение: центрируется по горизонтали и в верхней части
+        // Пиксельное сообщение: квадратные пиксели (SetPixel, половинные
+        // блоки ▀ ▄ █), поэтому высота в строках символов вдвое меньше
+        // высоты в пикселях. Центрируется по горизонтали и в верхней части
         // кадра (над счётом).
         const int letterWidth = kGlyphWidth * scale;
         const int totalWidth = glyphCount * letterWidth + (glyphCount - 1) * 2;
         const int startX = (80 - totalWidth) / 2;
-        const int messageHeight = kGlyphHeight * scale;
-        const int startY = (SCORE_ROW - messageHeight) / 2;
+        const int messageHeightRows = (kGlyphHeight * scale + 1) / 2;
+        const int topRow = (SCORE_ROW - messageHeightRows) / 2;
+        const int startY = topRow * 2; // пиксельные координаты (2 пикселя на строку)
         DrawPixelWord(frame, startX, startY, glyphs, colors, glyphCount, scale);
 
         // Счёт и уровень (не раскрашены — LIGHTGRAY, как в игровом кадре).

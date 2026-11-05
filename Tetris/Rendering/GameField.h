@@ -31,4 +31,15 @@ namespace Tetris
     void ViewGameField(
         const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
         bool useTruecolor = false);
+
+    // Устанавливает один квадратный пиксель в кадре (половинные блоки
+    // ▀ ▄ █). Пиксель (px, py) попадает в ячейку (col = px, row = py / 2):
+    // верхняя половинка, если py чётная, нижняя — если нечётная. Если обе
+    // половинки заняты, ячейка становится █ (цвет — от верхней половинки,
+    // у ячейки один цвет).
+    void SetPixel(
+        std::vector<std::pair<std::wstring, std::vector<int>>> &frame,
+        int px,
+        int py,
+        int color);
 }
