@@ -29,10 +29,10 @@ Tetris/
 | `Tetris/Core/Tetris.h` / `Tetris/Core/Tetris.cpp` | Игровой цикл, ввод. Вся логика — в `namespace Tetris`; `Tetris.h` — объявление `PlayGame()` (единственная функция, доступная извне) |
 | `Tetris/Rendering/Console.h` / `Tetris/Rendering/Console.cpp` | Консоль: `ProgramSettings()` (инициализация), двойная буферизация `DoubleBufferingBegin/End`, `g_console` (`ConsoleRenderer`) |
 | `Tetris/Core/Game.h` / `Tetris/Core/Game.cpp` | Правила игры: столкновения, движения, падение, фиксация, очистка линий, счёт и уровни |
-| `Tetris/Rendering/GameField.h` / `Tetris/Rendering/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль) |
+| `Tetris/Rendering/GameField.h` / `Tetris/Rendering/GameField.cpp` | Рендер поля: `CreateGameField` (сборка кадра), `ViewGameField` (вывод в консоль), `SetPixel` (пиксель на половинных блоках — заставка, меню, финальные экраны) |
 | `Tetris/Rendering/Splash.h` / `Tetris/Rendering/Splash.cpp` | Заставка при запуске: логотип «TETRIS» + ряд фигур, висит до нажатия любой клавиши (`ShowSplash`) |
 | `Tetris/Rendering/GameEnd.h` / `Tetris/Rendering/GameEnd.cpp` | Экраны конца партии: «GAME OVER» (`ShowGameOver`) и «YOU WIN» (`ShowWin`) — пиксельное сообщение + счёт/уровень, ожидание Enter |
-| `Tetris/Rendering/PixelFont.h` | Пиксельный шрифт 5×7 (26 букв латиницы) — логотип заставки и экраны конца партии |
+| `Tetris/Rendering/PixelFont.h` | Пиксельный шрифт 5×7: латиница A–Z, цифры 0–9, дефис, кириллица (33 буквы) — логотип заставки, экраны конца партии, меню |
 | `Tetris/Menu/GameMenu.h` / `Tetris/Menu/GameMenu.cpp` | Меню: `StartMenu` (главное меню), `ReturnToMenu` (возврат из игры), `ClearKeyboardBuffer` (очистка буфера клавиатуры) |
 | `Tetris/Core/Figure.h` / `Tetris/Core/Figure.cpp` | Класс `Figure` — падающая фигура: позиция, поворот, сдвиги, применение действия |
 | `Tetris/Core/FigureGenerator.h` / `Tetris/Core/FigureGenerator.cpp` | Генерация фигур: `RandomFigureId` (случайный id), `PositionById` (случайная стартовая позиция) |
