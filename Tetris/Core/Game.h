@@ -30,16 +30,6 @@ namespace Tetris
     // Проверяет, не заполнены ли верхние ряды стека (конец партии).
     bool CheckGameOver(const std::vector<std::vector<std::pair<int, int>>> &gameStack);
 
-    // Очищает заполненные строки стека, начисляет очки и сдвигает поле вниз.
-    void ClearLines
-    (
-        std::vector<std::vector<std::pair<int, int>>> &gameStack,
-        const Figure &nextFigure,
-        unsigned int &score,
-        std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
-        const int &level
-    );
-
     // Повышает уровень, если счёт превысил порог.
     void CheckScoreForLevel(const unsigned int &score, int &level);
 }

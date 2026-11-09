@@ -170,11 +170,17 @@ namespace Tetris
         int glyphCount,
         unsigned int score,
         int level,
-        int scale)
+        int scale,
+        bool waitForEnter)
     {
         std::vector<std::pair<std::wstring, std::vector<int>>> frame =
             BuildEndFrame(glyphs, colors, glyphCount, score, level, scale);
         ViewGameField(frame, true);
+
+        if (!waitForEnter)
+        {
+            return; // агентский режим: без ожидания Enter
+        }
 
         // Очистка буфера от «битвы».
         while (_kbhit())
@@ -188,18 +194,18 @@ namespace Tetris
         }
     }
 
-    void ShowGameOver(unsigned int score, int level)
+    void ShowGameOver(unsigned int score, int level, bool waitForEnter)
     {
         // 9 слотов (8 букв + пробел) не помещаются в 79 колонок при
         // масштабе 2 (106 > 79), поэтому «GAME OVER» рисуется в масштабе 1.
-        ShowEndScreen(kGameOverGlyphs, kGameOverColors, 9, score, level, 1);
+        ShowEndScreen(kGameOverGlyphs, kGameOverColors, 9, score, level, 1, waitForEnter);
     }
 
-    void ShowWin(unsigned int score, int level)
+    void ShowWin(unsigned int score, int level, bool waitForEnter)
     {
         // 7 слотов (6 букв + пробел) не помещаются в 79 колонок при
         // масштабе 2 (82 > 79), поэтому «YOU WIN» рисуется в масштабе 1 —
         // как и «GAME OVER» (визуальное единообразие).
-        ShowEndScreen(kWinGlyphs, kWinColors, 7, score, level, 1);
+        ShowEndScreen(kWinGlyphs, kWinColors, 7, score, level, 1, waitForEnter);
     }
 }

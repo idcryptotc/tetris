@@ -1,7 +1,6 @@
 #include "Figure.h"
 #include "Game.h"
 #include "GameData.h"
-#include "../Rendering/GameField.h"
 
 #include <cstddef>
 #include <string>
@@ -154,83 +153,6 @@ namespace Tetris
         return false;
     }
 
-    void ClearLines
-    (
-        std::vector<std::vector<std::pair<int, int>>> &gameStack,
-        const Figure &nextFigure,
-        unsigned int &score,
-        std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
-        const int &level
-    )
-    {
-        std::size_t gameStackSize = gameStack.size();
-
-        for (std::size_t i = 3; i < gameStackSize; ++i)
-        {
-            std::size_t gameStackISize = gameStack[i].size() - 1;
-
-            if (gameStack[i][WIDTH].first == 10)
-            {
-                unsigned int mask = 0x8;
-                gameStack[i][WIDTH].first = -1;
-
-                if (i + 1 < 22)
-                {
-                    mask += gameStack[i + 1][WIDTH].first == 10 ? (gameStack[i + 1][WIDTH].first = -1, 0x4) : 0x0;
-                }
-
-                if (i + 2 < 22)
-                {
-                    mask += gameStack[i + 2][WIDTH].first == 10 ? (gameStack[i + 2][WIDTH].first = -1, 0x2) : 0x0;
-                }
-
-                if (i + 3 < 22)
-                {
-                    mask += gameStack[i + 3][WIDTH].first == 10 ? (gameStack[i + 3][WIDTH].first = -1, 0x1) : 0x0;
-                }
-
-                for (std::size_t j = 0; j < gameStackISize; ++j)
-                {
-                    mask & 8 ? gameField[i].first[CURRENT_X1 + j] = L' ' : L'i';
-                    mask & 4 ? gameField[i + 1].first[CURRENT_X1 + j] = L' ' : L'i';
-                    mask & 2 ? gameField[i + 2].first[CURRENT_X1 + j] = L' ' : L'i';
-                    mask & 1 ? gameField[i + 3].first[CURRENT_X1 + j] = L' ' : L'i';
-                    // true: в Adaptive (truecolor) кадры анимации стирания
-                    // рисуются той же палитрой (kColorRgb), что и обычные
-                    // кадры. Иначе (useTruecolor=false) они шли бы ANSI 16
-                    // (палитра терминала) и цвета «прыгали» на момент стирания.
-                    // В Fixed truecolor недоступен — 16-цветный путь, как и раньше.
-                    ViewGameField(gameField, true);
-                }
-
-                // Кумулятивный подсчёт очков:
-                // чем больше линий очищено, тем выше базовый счёт:
-                // 4 линии = 10 очков, 3 линии = 6, 2 линии = 3, 1 линия = 1;
-                // результат умножается на текущий уровень.
-                // Таблица: индекс = количество очищенных линий.
-                const unsigned int LINES_SCORE_TABLE[5] = { 0, 1, 3, 6, 10 };
-                unsigned int clearedLines = ((mask & 0x8) >> 3) + ((mask & 0x4) >> 2) + ((mask & 0x2) >> 1) + (mask & 1);
-                score += LINES_SCORE_TABLE[clearedLines] * static_cast<unsigned int>(level);
-
-                for (std::size_t k = gameStackSize - 1, t = k; k > 0 && t > 0; --t)
-                {
-                    if (gameStack[t][WIDTH].first == -1)
-                    {
-                        continue;
-                    }
-
-                    for (std::size_t j = 0; j < gameStackISize + 1; ++j)
-                    {
-                        gameStack[k][j] = gameStack[t][j];
-                    }
-
-                    --k;
-                }
-
-                break;
-            }
-        }
-    }
 
     void CheckScoreForLevel(const unsigned int &score, int &level)
     {

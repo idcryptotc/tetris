@@ -169,6 +169,30 @@ namespace Tetris
         ViewGameField(gameField, true);
     }
 
+    // Анимация стирания очищенных линий: по колонкам (слева направо)
+    // стирает ячейки очищенных рядов и выводит промежуточные кадры.
+    // Вызывается между PrepareLineClear (пометка + очки, движок) и
+    // CommitLineClear (сдвиг стека, движок).
+    void AnimateLineClear(
+        std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+        int clearRow,
+        unsigned int clearMask)
+    {
+        for (int j = 0; j < WIDTH; ++j)
+        {
+            clearMask & 0x8 ? gameField[clearRow].first[CURRENT_X1 + j] = L' ' : L'i';
+            clearMask & 0x4 ? gameField[clearRow + 1].first[CURRENT_X1 + j] = L' ' : L'i';
+            clearMask & 0x2 ? gameField[clearRow + 2].first[CURRENT_X1 + j] = L' ' : L'i';
+            clearMask & 0x1 ? gameField[clearRow + 3].first[CURRENT_X1 + j] = L' ' : L'i';
+            // true: в Adaptive (truecolor) кадры анимации стирания
+            // рисуются той же палитрой (kColorRgb), что и обычные
+            // кадры. Иначе (useTruecolor=false) они шли бы ANSI 16
+            // (палитра терминала) и цвета «прыгали» на момент стирания.
+            // В Fixed truecolor недоступен — 16-цветный путь, как и раньше.
+            ViewGameField(gameField, true);
+        }
+    }
+
     void ViewGameField(
         const std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
         bool useTruecolor)
@@ -293,6 +317,13 @@ namespace Tetris
 
         int row = 0;
         const int bufHeight = static_cast<int>(g_console.csbi.dwSize.Y);
+
+        // Курсор в этом пути «течёт»: после кадра он остаётся на последней
+        // строке (row 24), и следующий кадр, начатый оттуда, уводит буфер
+        // в скролл — кадр сдвигается вниз на строку каждый раз (моргание со
+        // смещением по вертикали). Возвращаем курсор в начало кадра: кадр
+        // всегда рисуется в строках 0..23, без дрейфа и скролла.
+        (void)SetConsoleCursorPosition(g_console.basicBuffer, COORD{ offset.X, offset.Y });
 
         for (const auto &i : gameField)
         {

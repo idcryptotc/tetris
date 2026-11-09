@@ -93,7 +93,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,7 +111,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,7 +130,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,14 +149,20 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Agent\AgentChannel.cpp" />
+    <ClCompile Include="Agent\AgentGame.cpp" />
+    <ClCompile Include="Agent\AgentGameSession.cpp" />
+    <ClCompile Include="Agent\Json.cpp" />
+    <ClCompile Include="Agent\McpServer.cpp" />
     <ClCompile Include="Core\Figure.cpp" />
     <ClCompile Include="Core\FigureGenerator.cpp" />
     <ClCompile Include="Core\Game.cpp" />
     <ClCompile Include="Core\Tetris.cpp" />
+    <ClCompile Include="Core\TetrisEngine.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Menu\GameMenu.cpp" />
     <ClCompile Include="Rendering\Console.cpp" />
@@ -165,11 +171,17 @@
     <ClCompile Include="Rendering\Splash.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Agent\AgentChannel.h" />
+    <ClInclude Include="Agent\AgentGame.h" />
+    <ClInclude Include="Agent\AgentGameSession.h" />
+    <ClInclude Include="Agent\Json.h" />
+    <ClInclude Include="Agent\McpServer.h" />
     <ClInclude Include="Core\Figure.h" />
     <ClInclude Include="Core\FigureGenerator.h" />
     <ClInclude Include="Core\Game.h" />
     <ClInclude Include="Core\GameData.h" />
     <ClInclude Include="Core\Tetris.h" />
+    <ClInclude Include="Core\TetrisEngine.h" />
     <ClInclude Include="Input\Keys.h" />
     <ClInclude Include="Input\Settings.h" />
     <ClInclude Include="Menu\GameMenu.h" />

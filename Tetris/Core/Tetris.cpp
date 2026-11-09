@@ -1,7 +1,6 @@
-#include "Figure.h"
-#include "FigureGenerator.h"
-#include "Game.h"
+#include "TetrisEngine.h"
 #include "GameData.h"
+
 #include "../Rendering/Console.h"
 #include "../Rendering/GameEnd.h"
 #include "../Rendering/GameField.h"
@@ -17,61 +16,57 @@
 
 namespace Tetris
 {
+    // Консольная обёртка над движком: цикл с Sleep, опрос ввода, рендер.
+    // Вся игровая логика — в TetrisEngine (чистая, без I/O).
     bool PlayGame()
     {
-        int levelGame = 1;
-        unsigned int score = 0;
-        int stepProgress;
-        int figureId = RandomFigureId();
-        int figurePosition = PositionById(figureId);
-        Figure nextFigure(figureId, figurePosition);
-        figureId = RandomFigureId();
-        figurePosition = PositionById(figureId);
-        Figure currentFigure;
-        std::vector<std::vector<std::pair<int, int>>> gameStack(HEIGHT, std::vector<std::pair<int, int>>(WIDTH + 1, { 0,0 }));
+        TetrisEngine engine;
+        engine.Reset();
         std::vector<std::pair<std::wstring, std::vector<int>>> gameField = GAME_FIELD;
 
         while (true)
         {
             ClearKeyboardBuffer();
-            ClearLines(gameStack, nextFigure, score, gameField, levelGame);
-            // Уровень ограничен MAX_LEVEL: иначе LEVEL_TIME_STEP[levelGame - 1]
-            // (25 элементов, индексы 0..24) при levelGame = 26 — выход за
-            // границы (OOB). Победа проверяется ниже.
-            const int prevLevel = levelGame;
-            CheckScoreForLevel(score, levelGame);
-            if (levelGame > MAX_LEVEL)
-            {
-                levelGame = MAX_LEVEL;
-            }
-            // Вспышка level up: показывается в течение раунда, в котором
-            // поднят уровень (оверлей поверх кадра, без паузы). На высоких
-            // уровнях раунд короткий — вспышка не мешает.
-            const bool showLevelUp = levelGame > prevLevel;
-            currentFigure = nextFigure;
-            currentFigure.SetUse(true);
-            figureId = RandomFigureId();
-            figurePosition = PositionById(figureId);
-            nextFigure.SetBasicParameters(figureId, figurePosition);
-            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
 
-            if (CheckGameOver(gameStack))
+            // Очистка линий: пометка + очки (движок), анимация стирания (рендер),
+            // сдвиг стека вниз (движок).
+            const LineClearInfo clearInfo = engine.PrepareLineClear();
+            if (clearInfo.lineCleared)
             {
-                ShowGameOver(score, levelGame);
+                AnimateLineClear(gameField, clearInfo.clearRow, clearInfo.clearMask);
+                engine.CommitLineClear();
+            }
+
+            // Переход к новой фигуре: обновление уровня, game over/победа,
+            // текущая = следующая, новая следующая.
+            const StepResult step = engine.BeginFigure();
+
+            CreateGameField(
+                engine.GetNextFigure(),
+                engine.GetCurrentFigure(),
+                gameField,
+                engine.GetStack(),
+                engine.GetScore(),
+                engine.GetLevel(),
+                engine.GetShowLevelUp());
+
+            if (step.gameOver)
+            {
+                ShowGameOver(engine.GetScore(), engine.GetLevel());
                 return true;
             }
 
             // Победа: достигнут MAX_LEVEL. Проверяется после game over,
             // т.к. переполнение стека имеет приоритет (партия проиграна).
-            if (levelGame >= MAX_LEVEL)
+            if (step.win)
             {
-                ShowWin(score, levelGame);
+                ShowWin(engine.GetScore(), engine.GetLevel());
                 return true;
             }
 
             for (int line = 0; line < MAX_FALL_LINES; ++line)
             {
-                stepProgress = 0;
+                int stepProgress = 0;
 
                 while (stepProgress < COUNT_STEP_CHAPTER)
                 {
@@ -80,29 +75,57 @@ namespace Tetris
                     // ROTATE_DOWN, HARD_DROP, EXIT.
                     if (IsKeyPressed(KeyFor(BindingAction::LEFT)))
                     {
-                        TryMove(currentFigure, gameStack, MoveDirection::Left, Actions::LEFT);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                        engine.ApplyAction(PlayerAction::Left, line);
+                        CreateGameField(
+                            engine.GetNextFigure(),
+                            engine.GetCurrentFigure(),
+                            gameField,
+                            engine.GetStack(),
+                            engine.GetScore(),
+                            engine.GetLevel(),
+                            engine.GetShowLevelUp());
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::RIGHT)))
                     {
-                        TryMove(currentFigure, gameStack, MoveDirection::Right, Actions::RIGHT);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                        engine.ApplyAction(PlayerAction::Right, line);
+                        CreateGameField(
+                            engine.GetNextFigure(),
+                            engine.GetCurrentFigure(),
+                            gameField,
+                            engine.GetStack(),
+                            engine.GetScore(),
+                            engine.GetLevel(),
+                            engine.GetShowLevelUp());
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_UP)))
                     {
-                        TryMove(currentFigure, gameStack, MoveDirection::RotateUp, Actions::ROTATE);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                        engine.ApplyAction(PlayerAction::RotateUp, line);
+                        CreateGameField(
+                            engine.GetNextFigure(),
+                            engine.GetCurrentFigure(),
+                            gameField,
+                            engine.GetStack(),
+                            engine.GetScore(),
+                            engine.GetLevel(),
+                            engine.GetShowLevelUp());
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::ROTATE_DOWN)))
                     {
-                        TryMove(currentFigure, gameStack, MoveDirection::RotateDown, Actions::ROTATE);
-                        CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                        engine.ApplyAction(PlayerAction::RotateDown, line);
+                        CreateGameField(
+                            engine.GetNextFigure(),
+                            engine.GetCurrentFigure(),
+                            gameField,
+                            engine.GetStack(),
+                            engine.GetScore(),
+                            engine.GetLevel(),
+                            engine.GetShowLevelUp());
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::HARD_DROP)))
                     {
                         if (line < MAX_FALL_LINES)
                         {
-                            if (TryFallOneStep(currentFigure, gameStack, line) == FallResult::Locked)
+                            if (engine.ApplyAction(PlayerAction::HardDrop, line))
                             {
                                 line = MAX_FALL_LINES;
                                 break;
@@ -110,7 +133,14 @@ namespace Tetris
 
                             ++line;
                             ++stepProgress;
-                            CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                            CreateGameField(
+                                engine.GetNextFigure(),
+                                engine.GetCurrentFigure(),
+                                gameField,
+                                engine.GetStack(),
+                                engine.GetScore(),
+                                engine.GetLevel(),
+                                engine.GetShowLevelUp());
                         }
                     }
                     else if (IsKeyPressed(KeyFor(BindingAction::EXIT)))
@@ -124,32 +154,44 @@ namespace Tetris
                                 // покрывает весь буфер — текст меню паузы в
                                 // левом верхнем углу остался бы видимым.
                                 ClearConsoleBuffer();
-                                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                                CreateGameField(
+                                    engine.GetNextFigure(),
+                                    engine.GetCurrentFigure(),
+                                    gameField,
+                                    engine.GetStack(),
+                                    engine.GetScore(),
+                                    engine.GetLevel(),
+                                    engine.GetShowLevelUp());
                                 break;
                             case MenuResult::Quit:
                                 return false;
                         }
                     }
 
-                    // levelGame — 1-индексный (1..25), LEVEL_TIME_STEP —
+                    // level — 1-индексный (1..25), LEVEL_TIME_STEP —
                     // 0-индексный (0..24): уровень 1 → 500 мс, 25 → 20 мс.
-                    Sleep(LEVEL_TIME_STEP[levelGame - 1] / COUNT_STEP_CHAPTER);
+                    Sleep(LEVEL_TIME_STEP[engine.GetLevel() - 1] / COUNT_STEP_CHAPTER);
                     ++stepProgress;
                 }
 
                 if (line < MAX_FALL_LINES)
                 {
-                    if (TryFallOneStep(currentFigure, gameStack, line) == FallResult::Locked)
+                    if (engine.FallOneStep(line) == FallResult::Locked)
                     {
                         line = MAX_FALL_LINES;
                         break;
                     }
                 }
 
-                CreateGameField(nextFigure, currentFigure, gameField, gameStack, score, levelGame, showLevelUp);
+                CreateGameField(
+                    engine.GetNextFigure(),
+                    engine.GetCurrentFigure(),
+                    gameField,
+                    engine.GetStack(),
+                    engine.GetScore(),
+                    engine.GetLevel(),
+                    engine.GetShowLevelUp());
             }
-
-            nextFigure.SetUse(false);
         }
     }
 }

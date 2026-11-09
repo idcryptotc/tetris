@@ -24,6 +24,14 @@ namespace Tetris
         const int &level,
         bool showLevelUp = false
     );
+    // Анимация стирания очищенных линий: по колонкам (слева направо)
+    // стирает ячейки очищенных рядов и выводит промежуточные кадры.
+    // clearRow — стартовый ряд очистки, clearMask — маска очищенных рядов
+    // (биты 3..0 соответствуют рядам clearRow..clearRow+3).
+    void AnimateLineClear(
+        std::vector<std::pair<std::wstring, std::vector<int>>> &gameField,
+        int clearRow,
+        unsigned int clearMask);
 
     // Выводит кадр в консоль (с двойной буферизацией).
     // useTruecolor — рисовать цветные ячейки (█) через truecolor (VT,

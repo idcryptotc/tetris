@@ -9,8 +9,11 @@ namespace Tetris
     // закрывают, а буфер клавиатуры перед ожиданием сбрасывается).
 
     // Экран проигрыша: «GAME OVER». Показывается при переполнении стека.
-    void ShowGameOver(unsigned int score, int level);
+    // waitForEnter — ждать Enter (true, по умолчанию); в агентском режиме
+    // false — экран показывается и сразу возвращается (ожидание restart).
+    void ShowGameOver(unsigned int score, int level, bool waitForEnter = true);
 
     // Экран победы: «YOU WIN». Показывается при достижении MAX_LEVEL.
-    void ShowWin(unsigned int score, int level);
+    // waitForEnter — как в ShowGameOver.
+    void ShowWin(unsigned int score, int level, bool waitForEnter = true);
 }
