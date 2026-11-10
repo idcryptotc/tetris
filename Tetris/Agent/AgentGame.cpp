@@ -1,4 +1,4 @@
-﻿#include "AgentGame.h"
+#include "AgentGame.h"
 
 #include "AgentChannel.h"
 #include "AgentGameSession.h"
@@ -18,11 +18,10 @@
 
 namespace Tetris
 {
-    // Время на фигуру в агентском режиме (мс). Фиксированное, не зависит
-    // от уровня: темп игры для человека (LEVEL_TIME_STEP, 500→20 мс) агенту
-    // не подходит — MCP-раундтрип (запрос состояния + ход) занимает секунды.
-    // 40 с на фигуру — запас на «раздумья» агента.
-    constexpr int AGENT_FIGURE_TIME_MS = 40000;
+    // Темп событийного цикла, когда ходов от агента нет (мс): фигура висит
+    // в воздухе (гравитации нет), CPU крутить нельзя, при этом ходы из
+    // очереди должны применяться быстро.
+    constexpr int AGENT_IDLE_SLEEP_MS = 30;
     // Инициализация агентского канала: старт фоновой нити (bind/listen/accept),
     // ожидание привязки к порту. Возвращает true при успехе.
     static bool StartAgentChannel(AgentChannel &channel, AgentGameSession &session, std::thread &channelThread)
@@ -52,6 +51,10 @@ namespace Tetris
     // (очередь действий). Состояние движка публикуется в сессию после каждого
     // кадра — агент видит то же, что и на экране.
     //
+    // Гравитации нет: фигура движется только действиями агента
+    // (move_left/move_right/rotate/move_down/hard_drop), темп партии равен
+    // темпу ходов агента (событийный цикл).
+    //
     // Возвращается, когда агент запрашивает выход (команда quit).
     void PlayAgentGame()
     {
@@ -80,6 +83,10 @@ namespace Tetris
                 // Партия окончена: ждём restart или quit от агента.
                 if (session.TakeRestartRequest())
                 {
+                    // Очистка очереди: ходы, накопленные во время game over
+                    // (агент «не видел» конец и продолжал ходить), не должны
+                    // применяться к новой партии.
+                    (void)session.TakeActions();
                     engine.Reset();
                     gameField = GAME_FIELD;
                     gameActive = true;
@@ -119,6 +126,9 @@ namespace Tetris
             if (step.gameOver)
             {
                 ShowGameOver(engine.GetScore(), engine.GetLevel(), false);
+                // Публикуем состояние ДО ожидания restart: агент должен увидеть
+                // game_over: true (иначе продолжит ходить, не зная о конце).
+                session.SetState(engine.GetState());
                 gameActive = false;
                 continue;
             }
@@ -128,95 +138,103 @@ namespace Tetris
             if (step.win)
             {
                 ShowWin(engine.GetScore(), engine.GetLevel(), false);
+                // Публикуем состояние ДО ожидания restart: агент должен увидеть
+                // win: true (иначе продолжит ходить, не зная о победе).
+                session.SetState(engine.GetState());
                 gameActive = false;
                 continue;
             }
 
-            for (int line = 0; line < MAX_FALL_LINES; ++line)
+            // Фигура ждёт агента: гравитации нет — она движется только
+            // move_left/move_right/rotate/move_down/hard_drop. line — сколько
+            // рядов фигура опустилась (0..MAX_FALL_LINES): раунд завершается,
+            // когда line == MAX_FALL_LINES (фиксация фигуры в стеке).
+            int line = 0;
+            bool locked = false;
+
+            while (!locked && session.IsRunning())
             {
-                int stepProgress = 0;
-                bool roundOver = false;
+                // Ходы агента из очереди (тот же путь, что и клавиатура).
+                const std::vector<PlayerAction> actions = session.TakeActions();
+                bool acted = false;
 
-                while (stepProgress < COUNT_STEP_CHAPTER && !roundOver)
+                for (const PlayerAction action : actions)
                 {
-                    // Ходы агента из очереди (тот же путь, что и клавиатура).
-                    const std::vector<PlayerAction> actions = session.TakeActions();
-                    for (const PlayerAction action : actions)
+                    acted = true;
+
+                    if (action == PlayerAction::Down)
                     {
-                        if (action == PlayerAction::HardDrop)
+                        // Мягкий шаг вниз на один ряд. Столкновение с полом/стеком
+                        // фиксирует фигуру в стеке (ApplyAction/Down — FallOneStep,
+                        // SetFigure); падение на последний ряд
+                        // (line == MAX_FALL_LINES) тоже фиксация.
+                        if (engine.ApplyAction(PlayerAction::Down, line))
                         {
-                            // Hard drop — падение до фиксации (как удержание
-                            // клавиши в игровом цикле человека).
-                            int dropLine = line;
-                            bool locked = false;
+                            locked = true; // столкновение — зафиксирована в стеке
+                            break;
+                        }
 
-                            while (dropLine < MAX_FALL_LINES)
+                        ++line;
+
+                        if (line == MAX_FALL_LINES)
+                        {
+                            locked = true; // упала на последний ряд — зафиксирована
+                            break;
+                        }
+                    }
+                    else if (action == PlayerAction::HardDrop)
+                    {
+                        // Hard drop — падение до фиксации (как удержание
+                        // клавиши в игровом цикле человека).
+                        int dropLine = line;
+                        bool dropLocked = false;
+
+                        while (dropLine < MAX_FALL_LINES)
+                        {
+                            if (engine.ApplyAction(PlayerAction::HardDrop, dropLine))
                             {
-                                if (engine.ApplyAction(PlayerAction::HardDrop, dropLine))
-                                {
-                                    locked = true;
-                                    break;
-                                }
-
-                                ++dropLine;
-                            }
-
-                            line = dropLine;
-
-                            if (locked)
-                            {
-                                // Фигура зафиксирована в стеке — конец раунда
-                                // (как в игровом цикле человека: line = MAX_FALL_LINES,
-                                // break из цикла шагов).
-                                line = MAX_FALL_LINES;
-                                roundOver = true;
+                                dropLocked = true; // столкновение — зафиксирована
                                 break;
                             }
+
+                            ++dropLine;
                         }
-                        else
+
+                        line = dropLine;
+
+                        // Фиксация: столкновение или падение на последний ряд
+                        // (после него line == MAX_FALL_LINES).
+                        if (dropLocked || line == MAX_FALL_LINES)
                         {
-                            engine.ApplyAction(action, line);
+                            locked = true;
+                            break;
                         }
-
-                        CreateGameField(
-                            engine.GetNextFigure(),
-                            engine.GetCurrentFigure(),
-                            gameField,
-                            engine.GetStack(),
-                            engine.GetScore(),
-                            engine.GetLevel(),
-                            engine.GetShowLevelUp());
                     }
-
-                    // Фиксированный темп для агента: AGENT_FIGURE_TIME_MS на
-                    // фигуру (19 рядов × 8 шагов = 152 шага), независимо от
-                    // уровня. Набрав скорости (LEVEL_TIME_STEP) агент не
-                    // успевает — MCP-раундтрип занимает секунды.
-                    Sleep(AGENT_FIGURE_TIME_MS / (MAX_FALL_LINES * COUNT_STEP_CHAPTER));
-                    ++stepProgress;
-                }
-
-                if (line < MAX_FALL_LINES)
-                {
-                    if (engine.FallOneStep(line) == FallResult::Locked)
+                    else
                     {
-                        line = MAX_FALL_LINES;
-                        break;
+                        engine.ApplyAction(action, line);
                     }
-                }
 
-                CreateGameField(
-                    engine.GetNextFigure(),
-                    engine.GetCurrentFigure(),
-                    gameField,
-                    engine.GetStack(),
-                    engine.GetScore(),
-                    engine.GetLevel(),
-                    engine.GetShowLevelUp());
+                    CreateGameField(
+                        engine.GetNextFigure(),
+                        engine.GetCurrentFigure(),
+                        gameField,
+                        engine.GetStack(),
+                        engine.GetScore(),
+                        engine.GetLevel(),
+                        engine.GetShowLevelUp());
+                }
 
                 // Публикуем состояние для агента (снимок после кадра):
-                // агент видит то же, что и на экране, после каждого шага.
+                // агент видит то же, что и на экране.
                 session.SetState(engine.GetState());
+
+                if (!acted)
+                {
+                    // Ходов от агента нет — не крутим CPU: фигура висит
+                    // в воздухе, пока агент не сделает ход.
+                    Sleep(AGENT_IDLE_SLEEP_MS);
+                }
             }
         }
 

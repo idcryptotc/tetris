@@ -134,6 +134,10 @@ namespace {
         tools.arrayValue.push_back(MakeTool("rotate_down",
                                             "Повернуть текущую фигуру ПО часовой стрелке. Если поворот невозможен "
                                             "(стена, стек), фигура остаётся без изменений."));
+        tools.arrayValue.push_back(MakeTool("move_down",
+                                            "Опустить текущую фигуру на один ряд вниз (гравитации нет: без move_down "
+                                            "или hard_drop фигура висит на месте). Не смогла упасть (упёрлась в "
+                                            "пол или стек) — фигура фиксируется в стеке, начинается следующая."));
         tools.arrayValue.push_back(MakeTool("hard_drop",
                                             "Мгновенно опустить текущую фигуру до упора: она фиксируется в стеке, "
                                             "сразу начинается следующая (см. next в get_state)."));
@@ -364,6 +368,9 @@ int RunMcpServer() {
             } else if (toolName == "rotate_down") {
                 agentType = "action";
                 agentAction = "rotate_down";
+            } else if (toolName == "move_down") {
+                agentType = "action";
+                agentAction = "move_down";
             } else if (toolName == "hard_drop") {
                 agentType = "action";
                 agentAction = "hard_drop";

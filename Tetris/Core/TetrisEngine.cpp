@@ -152,9 +152,10 @@ namespace Tetris
     }
 
     // Применяет действие игрока к текущей фигуре. LEFT/RIGHT/ROTATE —
-    // пробное движение (TryMove). HARD_DROP — падение на один ряд
-    // (FallOneStep). Возвращает true, если фигура зафиксирована
-    // (только для HARD_DROP).
+    // пробное движение (TryMove). DOWN — мягкий шаг вниз на один ряд
+    // (агентский режим без гравитации), HARD_DROP — шаг падения
+    // (FallOneStep): true при столкновении с полом/стеком (фигура
+    // зафиксирована в стеке).
     bool TetrisEngine::ApplyAction(PlayerAction action, int fallLine)
     {
         switch (action)
@@ -171,6 +172,7 @@ namespace Tetris
             case PlayerAction::RotateDown:
                 TryMove(currentFigure, stack, MoveDirection::RotateDown, Actions::ROTATE);
                 return false;
+            case PlayerAction::Down:
             case PlayerAction::HardDrop:
                 return FallOneStep(fallLine) == FallResult::Locked;
         }

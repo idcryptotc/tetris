@@ -204,32 +204,35 @@ namespace Tetris
         {}
     };
 
-    // Начальная раскладка игрового поля (строки x 45 колонок).
+    // Начальная раскладка игрового поля (24 строки x 79 колонок).
+    // Ширина 79 — как у экрана конца партии (BuildEndFrame, GameEnd.cpp):
+    // кадр полностью покрывает ширину экрана, и после рестарта «хвост»
+    // GAME OVER / YOU WIN (колонки 45..78) не остаётся на экране.
     inline const std::vector<std::pair<std::wstring, std::vector<int>>> GAME_FIELD
     {
-        { { L"                              ┌────────┐     " }, std::vector<int>(45, 0) },
-        { { L"                              │        │     " }, std::vector<int>(45, 0) },
-        { { L"                              │        │     " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║   │        │     " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║   │        │     " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║   └────────┘     " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║  Score 000000    " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║  Level     01    " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║  ESC - Выход     " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║                  " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║  ↓ ↑ - Rotate    " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║ SPACE - MegaDown " }, std::vector<int>(45, 0) },
-        { { L"     ║                    ║   ←  - Left      " }, std::vector<int>(45, 0) },
-        { { L"     ╚════════════════════╝   →  - Right     " }, std::vector<int>(45, 0) },
-        { { L"                                             " }, std::vector<int>(45, 0) },
+        { { L"                              ┌────────┐                                       " }, std::vector<int>(79, 0) },
+        { { L"                              │        │                                       " }, std::vector<int>(79, 0) },
+        { { L"                              │        │                                       " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║   │        │                                       " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║   │        │                                       " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║   └────────┘                                       " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║  Score 000000                                      " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║  Level     01                                      " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║  ESC - Выход                                       " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║                                                    " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║  ↓ ↑ - Rotate                                      " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║ SPACE - MegaDown                                   " }, std::vector<int>(79, 0) },
+        { { L"     ║                    ║   ←  - Left                                        " }, std::vector<int>(79, 0) },
+        { { L"     ╚════════════════════╝   →  - Right                                       " }, std::vector<int>(79, 0) },
+        { { L"                                                                               " }, std::vector<int>(79, 0) },
     };
 }

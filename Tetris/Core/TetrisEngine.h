@@ -10,13 +10,14 @@
 namespace Tetris
 {
     // Действия игрока (агентский канал / MCP-тулзы).
-    // Соответствуют тулзам: move_left, move_right, rotate_up, rotate_down, hard_drop.
+    // Соответствуют тулзам: move_left, move_right, rotate_up, rotate_down, move_down, hard_drop.
     enum class PlayerAction
     {
         Left,
         Right,
         RotateUp,
         RotateDown,
+        Down,
         HardDrop
     };
 
@@ -112,9 +113,12 @@ namespace Tetris
         FallResult FallOneStep(int fallLine);
 
         // Применяет действие игрока к текущей фигуре. LEFT/RIGHT/ROTATE —
-        // пробное движение (TryMove). HARD_DROP — падение на один ряд
-        // (FallOneStep). Возвращает true, если фигура зафиксирована
-        // (только для HARD_DROP).
+        // пробное движение (TryMove). DOWN — мягкий шаг вниз на один ряд
+        // (агентский режим без гравитации), HARD_DROP — шаг падения
+        // (FallOneStep): глубину (fallLine) управляет вызывающий. Возвращает
+        // true при столкновении с полом/стеком (фигура зафиксирована в стеке);
+        // падение на последнем ряду тоже фиксация (после него fallLine ==
+        // MAX_FALL_LINES).
         bool ApplyAction(PlayerAction action, int fallLine);
 
         // Снимок состояния партии (агентский канал).
