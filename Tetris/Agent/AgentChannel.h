@@ -19,6 +19,8 @@ namespace Tetris
     //   {"id":N,"type":"get_rules"}            -> {"id":N,"type":"rules","rules":"..."}
     //   {"id":N,"type":"action","action":"left|right|rotate_up|rotate_down|hard_drop"}
     //                                          -> {"id":N,"type":"ok"}
+    //   {"id":N,"type":"place","actions":["left","rotate_up",...]}
+    //                                          -> {"id":N,"type":"place", ...} (новое состояние)
     //   {"id":N,"type":"restart"}              -> {"id":N,"type":"ok"}
     //   {"id":N,"type":"quit"}                 -> {"id":N,"type":"ok"}
     //
@@ -45,13 +47,28 @@ namespace Tetris
         // Заполняет JsonValue полями состояния (человекочитаемый формат).
         static void FillState(JsonValue &root, const GameStateSnapshot &state);
 
+        // Признаки поля (высоты колонок, закрытые дыры, неровность, общая
+        // высота) — считаются из стека, вызываются из FillState.
+        static void FillFeatures(JsonValue &root, const GameStateSnapshot &state);
+
         // Обслуживает одну команду (JSON), отправляет ответ.
         void HandleCommand(const std::string &line);
+
+        // Обслуживает команду place (пакет ходов расстановки): валидация,
+        // постановка в очередь, ожидание выполнения, новое состояние партии
+        // в ответе (response — уже с id).
+        void HandlePlace(const JsonValue &request, JsonValue &response);
 
     public:
         // Диапазон портов: 7777..7786 (первый свободный).
         static constexpr int kFirstPort = 7777;
         static constexpr int kPortCount = 10;
+
+        // Пакет place: максимум действий в одном пакете и параметры
+        // ожидания игровым циклом выполнения пакета (опрос и таймаут).
+        static constexpr int kMaxPlaceActions = 64;
+        static constexpr unsigned long kPlaceWaitPollMs = 15;
+        static constexpr unsigned long kPlaceWaitTimeoutMs = 10000;
 
         AgentChannel();
         ~AgentChannel();

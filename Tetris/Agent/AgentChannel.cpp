@@ -124,39 +124,91 @@ namespace Tetris
             "заполненная линия исчезает, блоки сверху падают, начисляются очки. "
             "Правила: "
             "1) Поле 10 колонок (x: 0 слева, 9 справа) на 22 ряда (y: 0 сверху, 21 снизу). "
-            "2) Гравитации НЕТ: фигура появляется сверху и ВИСИТ в воздухе, пока вы её "
-            "не двигаете. Темп партии — ваш темп ходов: спешить не нужно. "
-            "3) Ходы: move_left / move_right — сдвинуть текущую фигуру на 1 колонку "
-            "(поле всего 10 колонок: чтобы пересечь его, нужно 9 сдвигов, не больше); "
+            "2) Гравитации НЕТ: темп партии — ваш темп ходов: спешить не нужно. "
+            "3) ОСНОВНОЙ ход — place: одна команда = полная расстановка фигуры. "
+            "Поле actions — список шагов: left / right — сдвинуть текущую фигуру на 1 колонку "
+            "влево/вправо (поле всего 10 колонок: чтобы пересечь его, нужно 9 сдвигов, не больше); "
             "rotate_up — поворот против часовой стрелки, rotate_down — по часовой; "
-            "move_down — опустить фигуру на один ряд вниз; "
-            "hard_drop — мгновенно опустить фигуру до упора (она фиксируется, начинается следующая). "
+            "move_down — опустить фигуру на один ряд вниз; hard_drop — сразу до упора. "
+            "После выполнения пакета игра САМА опускает фигуру до упора и фиксирует её — "
+            "ход для фиксации не обязателен, но hard_drop можно включить в пакет. "
+            "В ответе place — НОВОЕ состояние партии: board, current, next, score, level, "
+            "game_over, win, features (см. правило 10) и lines_cleared (стёрто линий за пакет), "
+            "score_delta (прирост счёта). "
             "4) Невозможные ходы (стена, другая фигура) игнорируются: фигура остаётся на месте, "
-            "повторить ход не нужно. "
-            "5) Фиксация ТОЛЬКО явная: move_down, при которой фигура упёрлась в пол или стек, "
-            "фиксирует её (следующая — в поле next); hard_drop — сразу до упора и фиксация. "
-            "ВАЖНО: фигура не падает сама — перед тем как она «заменится», её нужно опустить "
-            "до фиксации (move_down несколько раз или hard_drop). Повороты и сдвиги фигуру "
-            "не фиксируют, сколько бы их вы не сделали. "
+            "повторять ход не нужно. "
+            "5) Фиксация — автоматическая после пакета place (игра опускает фигуру до упора). "
             "6) Счёт: 1 линия = 1, 2 = 3, 3 = 6, 4 = 10 (умножается на уровень); "
             "уровень растёт со счётом (пороги 50, 100, 150, ...). "
             "7) Game over — если стек дошёл до верхних трёх рядов (y 0..2). "
             "8) Победа — 25-й уровень (счёт 8000). "
             "9) КОНЕЦ ПАРТИИ (game_over: true ИЛИ win: true) — это ТЕРМИНАЛЬНОЕ состояние: "
-            "партия окончена, ходить НЕЛЬЗЯ (move_left/move_right/rotate/move_down/hard_drop "
-            "будут игнорированы). Единственный доступный ход — restart (новая партия) или quit "
-            "(выйти из игры). Как только в get_state видите game_over: true или win: true — "
+            "партия окончена, ходить НЕЛЬЗЯ (place и одиночные ходы будут отклонены). "
+            "Единственный доступный ход — restart (новая партия) или quit (выйти из игры). "
+            "Как только в place или get_state видите game_over: true или win: true — "
             "немедленно остановитесь и вызовите restart; НЕ продолжайте ходить. "
-            "Стратегия: выравнивайте низ, избегайте ям и выступов, используйте повороты "
-            "(особенно для I-фигуры: она 4x1 и поворачивается в вертикаль), "
-            "следите за next, чтобы готовить место. "
-            "Формат get_state: board — 22 строки по 10 символов, '.' — пусто, "
+            "10) features — признаки поля (не нужно вручную пересчитывать board): "
+            "heights — высоты колонок (0 — пустая, 21 — заполнена до верхнего ряда), "
+            "holes — закрытые пустые клетки (над ними в той же колонке есть блок), "
+            "bumpiness — суммарная неровность поверхности, aggregate_height — общая высота блоков. "
+            "Стратегия: выбирайте расстановку, минимизирующую holes + bumpiness + aggregate_height, "
+            "избегайте ям и выступов. Сначала оцените ориентацию фигуры (её cells), "
+            "затем выбирайте колонку. Повороты: A=I — часто нужна вертикаль (4x1, то есть 1x4) — "
+            "поворачивайте перед сдвигом; B=O — квадрат, поворот ничего не меняет, не поворачивайте; "
+            "C/D/E/F/G — поворот часто снижает holes + bumpiness. "
+            "Следите за next, чтобы готовить место. "
+            "11) Одиночные ходы (action): left / right / rotate_up / rotate_down / move_down / "
+            "hard_drop — доступны для отладки; для игры используйте place. "
+            "Формат get_state / place: board — 22 строки по 10 символов, '.' — пусто, "
             "буква — id зафиксированной фигуры (A..G); current — текущая фигура: "
             "id (A..G) и cells — её клетки в координатах поля [x, y]; next — следующая фигура "
-            "(то же самое, клетки — для планирования); score, level, game_over, win. "
-            "game_over/win — флаги конца партии (см. правило 9). "
+            "(то же самое, клетки — для планирования); score, level, game_over, win, features "
+            "(см. правило 10). "
             "Символы board: A=I (4x1), B=O (2x2), C=T, D=S, E=Z, F=J, G=L. "
             "Перед началом партии и при сомнении вызовите get_rules.";
+    }
+
+    // Имя действия протокола (поле "action" команды action, элементы
+    // пакета place) → PlayerAction. false — неизвестное имя.
+    static bool MapActionName(const std::string &name, PlayerAction &playerAction)
+    {
+        if (name == "left")
+        {
+            playerAction = PlayerAction::Left;
+            return true;
+        }
+
+        if (name == "right")
+        {
+            playerAction = PlayerAction::Right;
+            return true;
+        }
+
+        if (name == "rotate_up")
+        {
+            playerAction = PlayerAction::RotateUp;
+            return true;
+        }
+
+        if (name == "rotate_down")
+        {
+            playerAction = PlayerAction::RotateDown;
+            return true;
+        }
+
+        if (name == "move_down")
+        {
+            playerAction = PlayerAction::Down;
+            return true;
+        }
+
+        if (name == "hard_drop")
+        {
+            playerAction = PlayerAction::HardDrop;
+            return true;
+        }
+
+        return false;
     }
 
     // Клетки фигуры в координатах поля: [x, y], x в 0..9, y в 0..21.
@@ -238,6 +290,7 @@ namespace Tetris
         }
 
         root["board"] = board;
+        FillFeatures(root, state);
 
         JsonValue current;
         current["id"] = state.currentFigure.inUse ? state.currentFigure.id : -1;
@@ -248,6 +301,176 @@ namespace Tetris
         next["id"] = state.nextFigure.id;
         next["cells"] = FigureCells(state.nextFigure);
         root["next"] = next;
+    }
+
+    // Признаки поля для LLM-агента (совет «готовые признаки»): агенту не
+    // нужно вручную считать ряды board — готовое сравнение расстановок:
+    // heights — высоты колонок (0 — пустая колонка, 21 — заполнена до
+    // верхнего ряда), holes — закрытые пустые клетки (над ними в той же
+    // колонке есть блок), bumpiness — суммарная неровность поверхности,
+    // aggregate_height — общая высота блоков. Цель: минимизировать
+    // holes + bumpiness + aggregate_height. Считаются из стека — движок
+    // не затрагивается.
+    void AgentChannel::FillFeatures(JsonValue &root, const GameStateSnapshot &state)
+    {
+        int heights[10] = { 0 };
+
+        for (int col = 0; col < WIDTH / SHIFT_MULTIPLIER; ++col)
+        {
+            for (int row = 0; row < static_cast<int>(state.stack.size()); ++row)
+            {
+                const auto &rowData = state.stack[row];
+
+                if (rowData[static_cast<std::size_t>(col * SHIFT_MULTIPLIER)].first > 0)
+                {
+                    heights[col] = row;
+                    break;
+                }
+            }
+        }
+
+        int holes = 0;
+        int aggregateHeight = 0;
+
+        for (int col = 0; col < WIDTH / SHIFT_MULTIPLIER; ++col)
+        {
+            aggregateHeight += HEIGHT - heights[col];
+
+            for (int row = 0; row < heights[col]; ++row)
+            {
+                const auto &rowData = state.stack[row];
+
+                if (rowData[static_cast<std::size_t>(col * SHIFT_MULTIPLIER)].first <= 0)
+                {
+                    ++holes;
+                }
+            }
+        }
+
+        int bumpiness = 0;
+
+        for (int col = 0; col + 1 < WIDTH / SHIFT_MULTIPLIER; ++col)
+        {
+            const int diff = heights[col] - heights[col + 1];
+            bumpiness += diff < 0 ? -diff : diff;
+        }
+
+        JsonValue features;
+        features["aggregate_height"] = aggregateHeight;
+
+        JsonValue heightsArray;
+        heightsArray.type = JsonValue::Type::Array;
+
+        for (int col = 0; col < WIDTH / SHIFT_MULTIPLIER; ++col)
+        {
+            heightsArray.arrayValue.push_back(JsonValue(heights[col]));
+        }
+
+        features["heights"] = heightsArray;
+        features["holes"] = holes;
+        features["bumpiness"] = bumpiness;
+        root["features"] = features;
+    }
+
+    // Обслуживает команду place (пакет: полная расстановка фигуры одной
+    // командой): валидация, постановка в очередь игрового цикла, ожидание
+    // выполнения пакета (счётчик placeGeneration) и новое состояние партии
+    // в ответе. Ответ формирует response (id уже записан HandleCommand).
+    void AgentChannel::HandlePlace(const JsonValue &request, JsonValue &response)
+    {
+        if (session == nullptr)
+        {
+            response["type"] = std::string("error");
+            response["error"] = std::string("no session");
+            return;
+        }
+
+        // Терминальное состояние: партия окончена — только restart/quit.
+        const GameStateSnapshot state = session->GetState();
+
+        if (state.gameOver || state.win)
+        {
+            response["type"] = std::string("error");
+            response["error"] = std::string("game over: only restart or quit");
+            return;
+        }
+
+        const JsonValue *actionsValue = request.Find("actions");
+
+        if (actionsValue == nullptr
+            || actionsValue->type != JsonValue::Type::Array
+            || actionsValue->arrayValue.empty())
+        {
+            response["type"] = std::string("error");
+            response["error"] = std::string("actions: требуется непустой массив действий");
+            return;
+        }
+
+        if (actionsValue->arrayValue.size() > kMaxPlaceActions)
+        {
+            response["type"] = std::string("error");
+            response["error"] = std::string("actions: максимум " + std::to_string(kMaxPlaceActions) + " действий");
+            return;
+        }
+
+        std::vector<PlayerAction> actions;
+        actions.reserve(actionsValue->arrayValue.size());
+
+        for (const JsonValue &actionValue : actionsValue->arrayValue)
+        {
+            const std::string actionName = actionValue.AsString();
+            PlayerAction playerAction{};
+
+            if (!MapActionName(actionName, playerAction))
+            {
+                response["type"] = std::string("error");
+                response["error"] = std::string("unknown action: " + actionName);
+                return;
+            }
+
+            actions.push_back(playerAction);
+        }
+
+        // Ждём завершения пакета: игровой цикл инкрементирует placeGeneration
+        // после очистки линий и выдачи новой фигуры. Пакет всегда завершает
+        // раунд (авто-hard_drop), поэтому потерянный пакет невозможен.
+        const unsigned long long generation = session->GetPlaceGeneration();
+        session->EnqueuePlace(std::move(actions));
+
+        const DWORD64 deadline = GetTickCount64() + kPlaceWaitTimeoutMs;
+        bool done = false;
+
+        while (!done && !stopRequested.load())
+        {
+            if (session->GetPlaceGeneration() != generation)
+            {
+                done = true;
+            }
+            else
+            {
+                Sleep(kPlaceWaitPollMs);
+
+                if (GetTickCount64() >= deadline)
+                {
+                    break;
+                }
+            }
+        }
+
+        if (!done)
+        {
+            response["type"] = std::string("error");
+            response["error"] = std::string("place: таймаут ожидания выполнения пакета");
+            return;
+        }
+
+        const AgentPlaceResult placeResult = session->GetPlaceResult();
+        response["type"] = std::string("place");
+        response["lines_cleared"] = placeResult.linesCleared;
+        response["score_delta"] = static_cast<int64_t>(placeResult.scoreDelta);
+        // Полное новое состояние партии: board, features, current, next,
+        // score, level, game_over, win.
+        FillState(response, session->GetState());
     }
 
     // Обслуживает одну команду (JSON), отправляет ответ.
@@ -289,38 +512,8 @@ namespace Tetris
             const std::string action = actionValue != nullptr ? actionValue->AsString() : std::string();
 
             PlayerAction playerAction{};
-            bool known = true;
 
-            if (action == "left")
-            {
-                playerAction = PlayerAction::Left;
-            }
-            else if (action == "right")
-            {
-                playerAction = PlayerAction::Right;
-            }
-            else if (action == "rotate_up")
-            {
-                playerAction = PlayerAction::RotateUp;
-            }
-            else if (action == "rotate_down")
-            {
-                playerAction = PlayerAction::RotateDown;
-            }
-            else if (action == "move_down")
-            {
-                playerAction = PlayerAction::Down;
-            }
-            else if (action == "hard_drop")
-            {
-                playerAction = PlayerAction::HardDrop;
-            }
-            else
-            {
-                known = false;
-            }
-
-            if (known && session != nullptr)
+            if (MapActionName(action, playerAction) && session != nullptr)
             {
                 session->EnqueueAction(playerAction);
                 response["type"] = std::string("ok");
@@ -328,9 +521,14 @@ namespace Tetris
             else
             {
                 response["type"] = std::string("error");
-                response["error"] = std::string(known ? "no session" : "unknown action");
+                response["error"] = std::string(session == nullptr ? "no session" : "unknown action");
             }
 
+            (void)SendLine(SerializeJson(response));
+        }
+        else if (type == "place")
+        {
+            HandlePlace(request, response);
             (void)SendLine(SerializeJson(response));
         }
         else if (type == "get_rules")

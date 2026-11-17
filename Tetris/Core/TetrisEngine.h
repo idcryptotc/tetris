@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Figure.h"
 #include "GameData.h"
@@ -9,8 +9,8 @@
 
 namespace Tetris
 {
-    // Действия игрока (агентский канал / MCP-тулзы).
-    // Соответствуют тулзам: move_left, move_right, rotate_up, rotate_down, move_down, hard_drop.
+    // Действия игрока (агентский канал / MCP-инструменты).
+    // Соответствуют инструментам: move_left, move_right, rotate_up, rotate_down, move_down, hard_drop.
     enum class PlayerAction
     {
         Left,
