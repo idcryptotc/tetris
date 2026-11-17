@@ -90,7 +90,7 @@ namespace Tetris
     // темпу ходов агента (событийный цикл).
     //
     // Возвращается, когда агент запрашивает выход (команда quit).
-    void PlayAgentGame()
+    void PlayAgentGame(bool enableDiagLog)
     {
         TetrisEngine engine;
         engine.Reset();
@@ -98,12 +98,19 @@ namespace Tetris
 
         AgentGameSession session;
         AgentChannel channel;
+
+        if (enableDiagLog)
+        {
+            channel.EnableLog();
+        }
+
         std::thread channelThread;
 
         if (!StartAgentChannel(channel, session, channelThread))
         {
             channel.Stop();
             channelThread.join();
+            channel.CloseLog();
             std::wcout << L"Агентский канал: все порты 7777-7786 заняты.\n";
             return;
         }
@@ -401,5 +408,6 @@ namespace Tetris
 
         channel.Stop();
         channelThread.join();
+        channel.CloseLog();
     }
 }

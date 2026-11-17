@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
@@ -36,6 +37,8 @@ namespace Tetris
         std::atomic<int> boundPort{ -1 };
         bool quitRequested{ false };
         bool wsStarted{ false };
+        bool logEnabled{ false };
+        FILE *logFile{ nullptr };
         AgentGameSession *session{ nullptr };
 
         // Отправляет строку клиенту (с \n). false при ошибке/отсутствии клиента.
@@ -58,6 +61,14 @@ namespace Tetris
         // постановка в очередь, ожидание выполнения, новое состояние партии
         // в ответе (response — уже с id).
         void HandlePlace(const JsonValue &request, JsonValue &response);
+
+        // Открывает (или очищает при превышении лимита) лог-файл.
+        // Вызывается из EnableLog() из основного потока до Start().
+        void OpenLog();
+
+        // Записывает событие в лог (если файл открыт): время, направление
+        // (isRequest — запрос -> / ответ <-), тип, id, краткое состояние.
+        void LogEvent(bool isRequest, const std::string &type, int64_t id, const std::string &summary);
 
     public:
         // Диапазон портов: 7777..7786 (первый свободный).
@@ -83,6 +94,14 @@ namespace Tetris
 
         // Останавливает сервер: ставит флаг, поток завершится сам.
         void Stop();
+
+        // Включает лог действий агента (флаг --agent-diag): каждый запрос
+        // и ответ протокола пишется в tetris_agent.log рядом с exe.
+        void EnableLog();
+
+        // Закрывает лог-файл. Вызывается из основного потока после join
+        // фоновой нити канала (нить больше не пишет в файл).
+        void CloseLog();
 
         // Запрошен ли выход (команда quit).
         bool IsQuitRequested() const;

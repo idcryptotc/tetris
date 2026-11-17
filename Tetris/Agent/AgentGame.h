@@ -8,5 +8,6 @@ namespace Tetris
     // кадра — агент видит то же, что и на экране.
     //
     // Возвращается, когда агент запрашивает выход (команда quit).
-    void PlayAgentGame();
+    // enableDiagLog — лог действий агента (tetris_agent.log рядом с exe).
+    void PlayAgentGame(bool enableDiagLog = false);
 }

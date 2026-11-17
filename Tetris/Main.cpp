@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
     //   (без флагов)      — обычная игра (заставка, меню, ввод с клавиатуры);
     //   --agent           — агентский режим: сразу в игру, без заставки/меню,
     //                       ходы — из агентского канала (TCP 127.0.0.1:7777-7786);
+    //   --agent-diag      — то же, что --agent, плюс лог действий агента
+    //                       (tetris_agent.log рядом с исполняемым файлом);
     //   --mcp-server      — MCP-сервер (stdio JSON-RPC), отдельный процесс:
     //                       подключается к игре, запущенной с --agent.
     for (int i = 1; i < argc; ++i)
@@ -32,6 +34,17 @@ int main(int argc, char *argv[])
             std::wcout << std::endl;
             system("cls");
             Tetris::PlayAgentGame();
+            return 0;
+        }
+
+        if (arg == "--agent-diag")
+        {
+            Tetris::ProgramSettings();
+            // Инициализация базового буфера (как в обычной игре).
+            std::wcout << std::endl;
+            system("cls");
+            // Лог действий агента: tetris_agent.log рядом с exe.
+            Tetris::PlayAgentGame(true);
             return 0;
         }
 

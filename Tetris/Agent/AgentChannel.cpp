@@ -3,11 +3,18 @@
 #include "Json.h"
 
 #include <cstddef>
+#include <cwchar>
+#include <stdio.h>
 #include <string>
 #include <ws2tcpip.h>
 
 namespace Tetris
 {
+    // Лимит размера лога действий агента (байты): файл tetris_agent.log
+    // рядом с exe; при открытии файл крупнее лимита очищается (в рамках
+    // одной сессии файла не переоткрываем — лог не растёт бесконечно).
+    static constexpr std::size_t kAgentLogMaxBytes = 512 * 1024;
+
     AgentChannel::AgentChannel()
     {
         WSADATA wsaData;
@@ -31,6 +38,104 @@ namespace Tetris
     void AgentChannel::SetSession(AgentGameSession *gameSession)
     {
         session = gameSession;
+    }
+
+    // Включает лог действий агента (флаг --agent-diag): ставит флаг и
+    // открывает файл. Вызывается из основного потока, до запуска фоновой
+    // нити канала — дальше в файл пишет только та нить.
+    void AgentChannel::EnableLog()
+    {
+        logEnabled = true;
+        OpenLog();
+    }
+
+    // Открывает лог-файл tetris_agent.log рядом с exe (каталог
+    // исполняемого файла, GetModuleFileNameW): append; файл крупнее
+    // лимита размера при открытии очищается (ротация без копирования).
+    void AgentChannel::OpenLog()
+    {
+        if (!logEnabled || logFile != nullptr)
+        {
+            return;
+        }
+
+        wchar_t modulePath[MAX_PATH] = { 0 };
+        const DWORD pathLength = GetModuleFileNameW(nullptr, modulePath, MAX_PATH);
+
+        if (pathLength == 0 || pathLength == MAX_PATH)
+        {
+            return; // путь к exe не определили — лог недоступен
+        }
+
+        wchar_t *slash = wcsrchr(modulePath, L'\\');
+
+        if (slash != nullptr)
+        {
+            *slash = L'\0';
+        }
+
+        const std::wstring logPath = std::wstring(modulePath) + L"\\tetris_agent.log";
+
+        // Ротация: файл крупнее лимита очищается (старые записи не нужны).
+        bool needsTruncate = false;
+        FILE *probe = nullptr;
+        const errno_t probeErr = _wfopen_s(&probe, logPath.c_str(), L"rb");
+
+        if (probeErr == 0 && probe != nullptr)
+        {
+            (void)fseek(probe, 0, SEEK_END);
+            const long size = ftell(probe);
+            (void)fclose(probe);
+            needsTruncate = size > static_cast<long>(kAgentLogMaxBytes);
+        }
+
+        const errno_t openErr = _wfopen_s(&logFile, logPath.c_str(), needsTruncate ? L"w" : L"a");
+
+        if (openErr != 0 || logFile == nullptr)
+        {
+            logFile = nullptr; // путь недоступен (нет каталога/права) — лог выключен
+        }
+    }
+
+    // Закрывает лог-файл. Вызывается из основного потока после join
+    // фоновой нити канала (нить больше не пишет в файл).
+    void AgentChannel::CloseLog()
+    {
+        if (logFile != nullptr)
+        {
+            (void)fclose(logFile);
+            logFile = nullptr;
+        }
+    }
+
+    // Записывает событие в лог (если файл открыт): время, направление
+    // (-> — запрос, <- — ответ), тип, id, краткое состояние.
+    void AgentChannel::LogEvent(bool isRequest, const std::string &type, int64_t id, const std::string &summary)
+    {
+        if (logFile == nullptr)
+        {
+            return;
+        }
+
+        SYSTEMTIME now;
+        GetLocalTime(&now);
+
+        const std::string suffix = summary.empty() ? std::string() : " " + summary;
+
+        (void)fprintf(
+            logFile,
+            "%04d-%02d-%02d %02d:%02d:%02d %s %s id=%lld%s\n",
+            static_cast<int>(now.wYear),
+            static_cast<int>(now.wMonth),
+            static_cast<int>(now.wDay),
+            static_cast<int>(now.wHour),
+            static_cast<int>(now.wMinute),
+            static_cast<int>(now.wSecond),
+            isRequest ? "->" : "<-",
+            type.empty() ? "?" : type.c_str(),
+            static_cast<long long>(id),
+            suffix.c_str());
+        (void)fflush(logFile);
     }
 
     // Отправляет строку клиенту (с \n). false при ошибке/отсутствии клиента.
@@ -161,9 +266,15 @@ namespace Tetris
             "hard_drop — доступны для отладки; для игры используйте place. "
             "Формат get_state / place: board — 22 строки по 10 символов, '.' — пусто, "
             "буква — id зафиксированной фигуры (A..G); current — текущая фигура: "
-            "id (A..G) и cells — её клетки в координатах поля [x, y]; next — следующая фигура "
-            "(то же самое, клетки — для планирования); score, level, game_over, win, features "
-            "(см. правило 10). "
+            "id (A..G), cells — её клетки в координатах поля [x, y], min_x/max_x — "
+            "левый/правый край (колонка), min_y/max_y — верхний/нижний край (ряд); "
+            "next — следующая фигура (то же: id, cells, границы — для планирования); "
+            "score, level, game_over, win, features (см. правило 10). "
+            "Важно: фигура появляется в СЛУЧАЙНОМ повороте — «стандартную» ориентацию "
+            "допускать нельзя, ориентация видна только из cells (и границ). "
+            "У левых/правых краев поля left/right могут работать нелинейно "
+            "(сдвиг меньше колонки, «кик»): не считайте сдвиги, всегда сверяйте "
+            "позицию с current в ответе. "
             "Символы board: A=I (4x1), B=O (2x2), C=T, D=S, E=Z, F=J, G=L. "
             "Перед началом партии и при сомнении вызовите get_rules.";
     }
@@ -257,6 +368,73 @@ namespace Tetris
         return cells;
     }
 
+    // Границы фигуры в координатах поля (min_x/max_x — левый/правый край в
+    // колонках, min_y/max_y — верхний/нижний край в рядах): LLM-агенту не
+    // нужно вручную выводить края из cells — смещение фигуры внутри её
+    // 4x4-маски уже учтено. Считается той же обходкой, что FigureCells.
+    static void AddFigureBounds(JsonValue &figure, const FigureSnapshot &figureSnap)
+    {
+        if (figureSnap.id < 0 || figureSnap.id >= static_cast<int>(FIGURES.size()))
+        {
+            return;
+        }
+
+        const auto &masks = FIGURES[static_cast<std::size_t>(figureSnap.id)];
+
+        if (figureSnap.position < 0 || figureSnap.position >= static_cast<int>(masks.size()))
+        {
+            return;
+        }
+
+        const unsigned short mask = masks[static_cast<std::size_t>(figureSnap.position)];
+        const int x0 = figureSnap.x - CURRENT_X1;
+        int minX = 9;
+        int maxX = -1;
+        int minY = 99;
+        int maxY = -1;
+        unsigned short shift = 1 << 15;
+
+        for (int y = 0; y < SIDE_SQUARE; ++y)
+        {
+            for (int x = 0; x < SIDE_SQUARE * SHIFT_MULTIPLIER; x += 2, shift >>= 1)
+            {
+                if (mask & shift)
+                {
+                    const int fieldX = (x0 + x) / SHIFT_MULTIPLIER;
+                    const int fieldY = figureSnap.y + y;
+
+                    if (fieldX < minX)
+                    {
+                        minX = fieldX;
+                    }
+
+                    if (fieldX > maxX)
+                    {
+                        maxX = fieldX;
+                    }
+
+                    if (fieldY < minY)
+                    {
+                        minY = fieldY;
+                    }
+
+                    if (fieldY > maxY)
+                    {
+                        maxY = fieldY;
+                    }
+                }
+            }
+        }
+
+        if (maxX >= 0)
+        {
+            figure["min_x"] = JsonValue(minX);
+            figure["max_x"] = JsonValue(maxX);
+            figure["min_y"] = JsonValue(minY);
+            figure["max_y"] = JsonValue(maxY);
+        }
+    }
+
     // Заполняет JsonValue полями состояния. Поле — человекочитаемой сеткой
     // (22 строки по 10 символов), фигуры — клетками в координатах поля:
     // LLM-агенту не нужно разбирать внутренний формат стека (21 колонка,
@@ -295,11 +473,13 @@ namespace Tetris
         JsonValue current;
         current["id"] = state.currentFigure.inUse ? state.currentFigure.id : -1;
         current["cells"] = FigureCells(state.currentFigure);
+        AddFigureBounds(current, state.currentFigure);
         root["current"] = current;
 
         JsonValue next;
         next["id"] = state.nextFigure.id;
         next["cells"] = FigureCells(state.nextFigure);
+        AddFigureBounds(next, state.nextFigure);
         root["next"] = next;
     }
 
@@ -473,13 +653,123 @@ namespace Tetris
         FillState(response, session->GetState());
     }
 
-    // Обслуживает одну команду (JSON), отправляет ответ.
+    // Краткое описание запроса для лога: для action — ход, для place —
+    // список ходов пакета (виден сам «план» агента), для остальных — пусто.
+    static std::string RequestSummary(const JsonValue &request)
+    {
+        const JsonValue *actionValue = request.Find("action");
+
+        if (actionValue != nullptr)
+        {
+            return "action=" + actionValue->AsString();
+        }
+
+        const JsonValue *actionsValue = request.Find("actions");
+
+        if (actionsValue == nullptr || actionsValue->type != JsonValue::Type::Array)
+        {
+            return std::string();
+        }
+
+        std::string summary;
+        bool first = true;
+
+        for (const JsonValue &actionValue : actionsValue->arrayValue)
+        {
+            if (!first)
+            {
+                summary += ',';
+            }
+
+            first = false;
+            summary += actionValue.AsString();
+        }
+
+        if (summary.empty())
+        {
+            return std::string();
+        }
+
+        return "actions=" + summary;
+    }
+
+    // Краткое сводное состояние ответа для лога: score/level/holes/bump
+    // для состояний партии, lines/delta для place, game_over/win при
+    // конце партии, error — текст ошибки (для ok/rules — пусто).
+    static std::string ResponseSummary(const JsonValue &response)
+    {
+        const JsonValue *errorValue = response.Find("error");
+
+        if (errorValue != nullptr)
+        {
+            return "error=" + errorValue->AsString();
+        }
+
+        const JsonValue *scoreValue = response.Find("score");
+
+        if (scoreValue == nullptr)
+        {
+            return std::string();
+        }
+
+        std::string summary = "score=" + std::to_string(scoreValue->AsInt())
+            + " level=" + std::to_string(response.Find("level")->AsInt());
+
+        const JsonValue *featuresValue = response.Find("features");
+
+        if (featuresValue != nullptr)
+        {
+            const JsonValue *holesValue = featuresValue->Find("holes");
+
+            if (holesValue != nullptr)
+            {
+                summary += " holes=" + std::to_string(holesValue->AsInt());
+            }
+
+            const JsonValue *bumpValue = featuresValue->Find("bumpiness");
+
+            if (bumpValue != nullptr)
+            {
+                summary += " bump=" + std::to_string(bumpValue->AsInt());
+            }
+        }
+
+        const JsonValue *linesValue = response.Find("lines_cleared");
+
+        if (linesValue != nullptr)
+        {
+            summary += " lines=" + std::to_string(linesValue->AsInt());
+
+            const JsonValue *deltaValue = response.Find("score_delta");
+            summary += " delta=" + std::to_string(deltaValue != nullptr ? deltaValue->AsInt() : 0);
+        }
+
+        const JsonValue *overValue = response.Find("game_over");
+
+        if (overValue != nullptr && overValue->AsBool())
+        {
+            summary += " game_over";
+        }
+
+        const JsonValue *winValue = response.Find("win");
+
+        if (winValue != nullptr && winValue->AsBool())
+        {
+            summary += " win";
+        }
+
+        return summary;
+    }
+
+    // Обслуживает одну команду (JSON): формирует ответ, пишет его в лог
+    // (если включён флаг --agent-diag) и отправляет клиенту.
     void AgentChannel::HandleCommand(const std::string &line)
     {
         JsonValue request;
 
         if (!ParseJson(line, request))
         {
+            LogEvent(true, "invalid_json", 0, std::string());
             (void)SendLine("{\"type\":\"error\",\"error\":\"invalid json\"}");
             return;
         }
@@ -488,6 +778,8 @@ namespace Tetris
         const int64_t id = idValue != nullptr ? idValue->AsInt() : 0;
         const JsonValue *typeValue = request.Find("type");
         const std::string type = typeValue != nullptr ? typeValue->AsString() : std::string();
+
+        LogEvent(true, type, id, RequestSummary(request));
 
         JsonValue response;
         response["id"] = id;
@@ -498,13 +790,12 @@ namespace Tetris
             {
                 response["type"] = std::string("error");
                 response["error"] = std::string("no session");
-                (void)SendLine(SerializeJson(response));
-                return;
             }
-
-            response["type"] = std::string("state");
-            FillState(response, session->GetState());
-            (void)SendLine(SerializeJson(response));
+            else
+            {
+                response["type"] = std::string("state");
+                FillState(response, session->GetState());
+            }
         }
         else if (type == "action")
         {
@@ -523,19 +814,15 @@ namespace Tetris
                 response["type"] = std::string("error");
                 response["error"] = std::string(session == nullptr ? "no session" : "unknown action");
             }
-
-            (void)SendLine(SerializeJson(response));
         }
         else if (type == "place")
         {
             HandlePlace(request, response);
-            (void)SendLine(SerializeJson(response));
         }
         else if (type == "get_rules")
         {
             response["type"] = std::string("rules");
             response["rules"] = GetRulesText();
-            (void)SendLine(SerializeJson(response));
         }
         else if (type == "restart")
         {
@@ -549,8 +836,6 @@ namespace Tetris
                 response["type"] = std::string("error");
                 response["error"] = std::string("no session");
             }
-
-            (void)SendLine(SerializeJson(response));
         }
         else if (type == "quit")
         {
@@ -562,14 +847,15 @@ namespace Tetris
             }
 
             response["type"] = std::string("ok");
-            (void)SendLine(SerializeJson(response));
         }
         else
         {
             response["type"] = std::string("error");
             response["error"] = std::string("unknown type");
-            (void)SendLine(SerializeJson(response));
         }
+
+        LogEvent(false, type, id, ResponseSummary(response));
+        (void)SendLine(SerializeJson(response));
     }
 
     // Запускает сервер: bind/listen/accept. Возвращает порт (или -1 при
