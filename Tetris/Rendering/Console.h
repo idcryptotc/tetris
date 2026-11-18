@@ -26,6 +26,7 @@ namespace Tetris
         COORD bufferSize{};                             // Размер области копирования
         COORD bufferCoord{};                            // Начальная точка копирования
         CHAR_INFO buffer[2000]{};                       // Область копирования (80x25)
+        CHAR_INFO lastFrame[2000]{};                    // Предыдущий кадр (CHAR_INFO 80x25) для показа в doubleBuffer (Fixed)
         ConsoleMode mode{ ConsoleMode::Fixed };         // Режим рендера
         COORD frameOffset{ 0, 0 };                      // Смещение кадра в буфере (Adaptive)
         COORD lastBufSize{ 0, 0 };                      // Размер буфера прошлого кадра (Adaptive: очистка при ресайзе)

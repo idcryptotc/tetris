@@ -376,6 +376,11 @@ namespace Tetris
             ++row;
         }
 
+        // Кадр полностью нарисован (wcout может буферизовать посимвольные
+        // записи): сбрасываем буфер, чтобы DoubleBufferingEnd снял снимок
+        // lastFrame с полностью заполненным basicBuffer.
+        std::wcout.flush();
+
         DoubleBufferingEnd();
     }
 }

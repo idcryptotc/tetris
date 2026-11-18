@@ -375,6 +375,17 @@ namespace Tetris
             {
                 MyErrorExit(L"WriteConsoleOutput");
             }
+
+            // Инициализируем lastFrame пустым кадром: первый
+            // DoubleBufferingBegin (заставка) покажет чистый предыдущий кадр,
+            // как сейчас при старте; дальше кадр хранится в памяти и показ
+            // становится детерминированным (не зависит от состояния
+            // «живого» basicBuffer, который может быть обнулён).
+            for (CHAR_INFO &cell : g_console.lastFrame)
+            {
+                cell.Char.UnicodeChar = L' ';
+                cell.Attributes = 0;
+            }
         }
     }
 
@@ -431,21 +442,14 @@ namespace Tetris
             system("mode con cols=80 lines=25");
         }
 
-        BOOL fSuccess = ReadConsoleOutput(
-            g_console.basicBuffer,
-            g_console.buffer,
-            g_console.bufferSize,
-            g_console.bufferCoord,
-            &g_console.bufferRect);
-
-        if (!fSuccess)
-        {
-            MyErrorExit(L"ReadConsoleOutput");
-        }
-
-        fSuccess = WriteConsoleOutput(
+        // Фиксированный режим: показываем сохранённый предыдущий кадр
+        // (lastFrame) в doubleBuffer. Кадр берётся из памяти, а не из
+        // «живого» basicBuffer: тот может быть обнулён (напр. mode con в
+        // ветке ресайза выше), и живой снимок показал бы пустой кадр —
+        // мерцание. lastFrame — последний полностью нарисованный кадр.
+        BOOL fSuccess = WriteConsoleOutput(
             g_console.doubleBuffer,
-            g_console.buffer,
+            g_console.lastFrame,
             g_console.bufferSize,
             g_console.bufferCoord,
             &g_console.bufferRect);
@@ -467,9 +471,23 @@ namespace Tetris
     void DoubleBufferingEnd()
     {
         // Оба режима: переключаем активный буфер на основной (basicBuffer),
-        // в который нарисован новый кадр. Адаптивный: атомарная смена кадра;
-        // фиксированный: как раньше.
+        // в который нарисован новый кадр. Адаптивный: атомарная смена кадра
+        // (прежний кадр — сохранённая VT-строка prevFrame).
         SetConsoleActiveScreenBuffer(g_console.basicBuffer);
+
+        // Фиксированный режим: запоминаем только что показанный кадр (целый
+        // 80x25 из basicBuffer) — он будет показан в doubleBuffer в
+        // следующем DoubleBufferingBegin. Снимок — после того, как новый
+        // кадр полностью нарисован (End вызывается в конце ViewGameField).
+        if (g_console.mode == ConsoleMode::Fixed)
+        {
+            (void)ReadConsoleOutput(
+                g_console.basicBuffer,
+                g_console.lastFrame,
+                g_console.bufferSize,
+                g_console.bufferCoord,
+                &g_console.bufferRect);
+        }
     }
 
     void UpdateAdaptiveBuffer()
