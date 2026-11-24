@@ -14,7 +14,7 @@
 
 ```
 Tetris/
-├─ Main.cpp              ← точка входа (флаги --agent / --mcp-server)
+├─ Main.cpp              ← точка входа (флаги --agent / --agent-diag / --mcp-server)
 ├─ Core/                 ← игровая логика: Tetris.h/.cpp, Game.h/.cpp,
 │                          Figure.h/.cpp, FigureGenerator.h/.cpp, GameData.h,
 │                          TetrisEngine.h/.cpp (движок без I/O)
@@ -44,9 +44,9 @@ Tetris/
 | `Tetris/Input/Settings.h` | Header-only (всё `inline`): загрузка/сохранение `tetris_settings.ini`, интерактивное меню переназначения клавиш |
 | `Tetris/Core/TetrisEngine.h` / `Tetris/Core/TetrisEngine.cpp` | Игровой движок без I/O: состояние партии, `Reset()`, `BeginFigure()`, `FallOneStep()`, `PrepareLineClear()`/`CommitLineClear()`, `ApplyAction(PlayerAction)`, `GetState()` — общий путь для клавиатуры (`PlayGame`) и агента (`PlayAgentGame`) |
 | `Tetris/Agent/AgentGame.h` / `Tetris/Agent/AgentGame.cpp` | Агентский режим (`--agent`): `PlayAgentGame()` — игровой цикл без ввода с клавиатуры, ходы — из очереди `AgentGameSession` |
-| `Tetris/Agent/AgentChannel.h` / `Tetris/Agent/AgentChannel.cpp` | Агентский канал: TCP-сервер на `127.0.0.1` (WinAPI-сокеты, `ws2_32.lib`), фоновый поток, протокол «строка = JSON» (`get_state`/`get_rules`/`action`/`restart`/`quit`), порты 7777–7786; снимок состояния — человекочитаемый (board 10×22, клетки фигур в координатах поля, правила — `GetRulesText`) |
+| `Tetris/Agent/AgentChannel.h` / `Tetris/Agent/AgentChannel.cpp` | Агентский канал: TCP-сервер на `127.0.0.1` (WinAPI-сокеты, `ws2_32.lib`), фоновый поток, протокол «строка = JSON» (`get_state`/`get_rules`/`action`/`place`/`restart`/`quit`), порты 7777–7786; снимок состояния — человекочитаемый (board 10×22, клетки фигур в координатах поля, правила — `GetRulesText`) |
 | `Tetris/Agent/AgentGameSession.h` / `Tetris/Agent/AgentGameSession.cpp` | Обмен между игровым циклом и каналом: очередь действий, снимок состояния, флаги restart/quit (под `std::mutex`) |
-| `Tetris/Agent/McpServer.h` / `Tetris/Agent/McpServer.cpp` | MCP-сервер (`--mcp-server`): stdio JSON-RPC 2.0 по спецификации MCP, проксирует инструменты в агентский канал игры (отдельный процесс) |
+| `Tetris/Agent/McpServer.h` / `Tetris/Agent/McpServer.cpp` | MCP-сервер (`--mcp-server`): stdio JSON-RPC 2.0 по спецификации MCP; игра запускается инструментом `start` (отдельный видимый процесс `--agent`), либо подключается к запущенной; проксирует инструменты в агентский канал (отдельный процесс) |
 | `Tetris/Agent/Json.h` / `Tetris/Agent/Json.cpp` | Минимальный JSON (значение, парсер, сериализатор) — без внешних зависимостей |
 | `Tetris/Tetris.vcxproj` | Проект MSBuild (Win32/x64, v145) |
 | `README.md` | Описание игры для пользователей |
@@ -61,7 +61,7 @@ Tetris/
 ## Как устроено
 
 - **Игровой цикл:** `main()` (`Main.cpp`) → заставка (`ShowSplash`) → меню (`StartMenu`) → `PlayGame()` в цикле. Логика — в `TetrisEngine` (без I/O), `PlayGame()` — консольная обёртка: цикл с `Sleep`, ввод, рендер. Фигура падает по таймеру `LEVEL_TIME_STEP` (25 уровней), ввод опрашивается каждый шаг.
-- **Режимы `--agent` / `--mcp-server`:** `--agent` — игра без заставки/меню, ходы — из агентского канала (TCP `127.0.0.1:7777`–`7786`, фоновый поток, протокол «строка = JSON»); `--mcp-server` — MCP-сервер (stdio JSON-RPC 2.0), отдельный процесс, подключается к игре с `--agent` и проксирует инструменты. Состояние для LLM-агента — человекочитаемое: `board` (22 строки × 10 символов, `.` — пусто, `A`–`G` — id фигуры) + `current`/`next` (клетки `[x, y]` в координатах поля); внутренний формат стека (21 колонка, клетка = 2 колонки) агенту не передаётся. Правила игры агенту отдаёт инструмент `get_rules`. Подробности — `DevDocs/mcp-agent.md`.
+- **Режимы `--agent` / `--mcp-server`:** `--agent` — игра без заставки/меню, ходы — из агентского канала (TCP `127.0.0.1:7777`–`7786`, фоновый поток, протокол «строка = JSON»); `--mcp-server` — MCP-сервер (stdio JSON-RPC 2.0), отдельный процесс, ждёт запросов; игру запускает агент инструментом `start` (сервер поднимает игру с `--agent` в отдельном видимом окне либо подключается к запущенной), проксирует инструменты в агентский канал. Состояние для LLM-агента — человекочитаемое: `board` (22 строки × 10 символов, `.` — пусто, `A`–`G` — id фигуры) + `current`/`next` (клетки `[x, y]` в координатах поля); внутренний формат стека (21 колонка, клетка = 2 колонки) агенту не передаётся. Правила игры агенту отдаёт инструмент `get_rules`. Подробности — `DevDocs/mcp-agent.md`.
 - **Рендер:** два режима (`ConsoleMode`, `Console.h`/`Console.cpp`), оба с двойной буферизацией (структура `ConsoleRenderer g_console`): кадр рисуется в скрытый `basicBuffer` (на него пишет `wcout` независимо от активного буфера), предыдущий кадр показывается в резервном `doubleBuffer`, затем `SetConsoleActiveScreenBuffer(basicBuffer)` атомарно переключает. **Fixed** — 16-цвет, предыдущий кадр копируется через `ReadConsoleOutput`/`WriteConsoleOutput` (CHAR_INFO). **Adaptive** (conpty-хосты) — кадр 80×25 центрируется в реальном буфере (`frameOffset`); truecolor-кадр (заставка) показывается в `doubleBuffer` через `WriteConsoleW` с сохранённой VT-строкой (`prevFrame`), т.к. CHAR_INFO теряет 24-бит; VT включён на обоих буферах. Подробности и обоснование — `DevDocs/adaptive-rendering.md`.
 - **Поле:** `GAME_FIELD` — 24 строки × 79 колонок (`wstring` + параллельный вектор цветов); ширина 79 совпадает с шириной экрана конца партии (`BuildEndFrame`, `GameEnd.cpp`), поэтому после рестарта «хвост» GAME OVER / YOU WIN в колонках 45..78 не остаётся на экране. Стек фигур `gameStack` — 22 × 21, где последний столбец `[WIDTH]` — счётчик заполнения строки (10 = строка полная, очищается).
 - **Фигуры:** битовые маски 16 бит (`FIGURES`), обход по биту `shift = 1 << 15`.

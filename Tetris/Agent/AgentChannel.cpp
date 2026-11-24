@@ -227,6 +227,9 @@ namespace Tetris
         return
             "Тетрис. Цель — складывать фигуры так, чтобы заполнять целые горизонтальные линии: "
             "заполненная линия исчезает, блоки сверху падают, начисляются очки. "
+            "Старт: перед первым ходом вызовите инструмент start — он запускает агентскую игру "
+            "(если игра уже запущена — подключится к ней). До вызова start остальные инструменты "
+            "недоступны. "
             "Правила: "
             "1) Поле 10 колонок (x: 0 слева, 9 справа) на 22 ряда (y: 0 сверху, 21 снизу). "
             "2) Гравитации НЕТ: темп партии — ваш темп ходов: спешить не нужно. "
@@ -320,6 +323,22 @@ namespace Tetris
         }
 
         return false;
+    }
+
+    // Цвет → id фигуры: в стеке клетка хранит цвет фигуры (второй компонент
+    // пары), а легенда get_rules — по id фигуры. Цвета у фигур уникальны
+    // (FIGURE_COLORS) — обратное отображение однозначное. -1 — не найден.
+    static int ColorToFigureId(int color)
+    {
+        for (const auto &entry : FIGURE_COLORS)
+        {
+            if (static_cast<int>(entry.second) == color)
+            {
+                return static_cast<int>(entry.first);
+            }
+        }
+
+        return -1;
     }
 
     // Клетки фигуры в координатах поля: [x, y], x в 0..9, y в 0..21.
@@ -458,10 +477,13 @@ namespace Tetris
 
             for (int x = 0; x < WIDTH; x += SHIFT_MULTIPLIER)
             {
-                const int id = row[static_cast<std::size_t>(x)].first > 0
-                    ? row[static_cast<std::size_t>(x)].second
+                // .second — цвет фигуры (см. Game.cpp SetFigure): переводим
+                // обратно в id, чтобы буквы board совпадали с легендой
+                // get_rules (A=I, B=O, C=T, D=S, E=Z, F=J, G=L).
+                const int figureId = row[static_cast<std::size_t>(x)].first > 0
+                    ? ColorToFigureId(row[static_cast<std::size_t>(x)].second)
                     : -1;
-                line += (id >= 0 && id < 26) ? static_cast<char>('A' + id) : '.';
+                line += figureId >= 0 ? static_cast<char>('A' + figureId) : '.';
             }
 
             board.arrayValue.push_back(JsonValue(line));

@@ -4,10 +4,14 @@
 #include "Json.h"
 
 #include <cstddef>
+#include <chrono>
 #include <fcntl.h>
+#include <optional>
 #include <io.h>
 #include <iostream>
 #include <string>
+#include <thread>
+#include <vector>
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -197,8 +201,9 @@ namespace Tetris
                 "для выбора расстановки, минимизирующей holes + bumpiness + aggregate_height. "
                 "current — текущая падающая фигура: id (A..G) и cells — её клетки [x, y] в координатах поля. "
                 "next — следующая фигура (id и cells). score, level, game_over, win. "
-                "Символы: A=I (4x1), B=O (2x2), C=T, D=S, E=Z, F=J, G=L. "
-                "Правила игры — в инструменте get_rules."));
+                "agent_running — запущена ли агентская игра. Символы: A=I (4x1), B=O (2x2), "
+                "C=T, D=S, E=Z, F=J, G=L. Если игра не запущена (agent_running: false), "
+                "сначала вызовите инструмент start. Правила игры — в инструменте get_rules."));
 
             tools.arrayValue.push_back(
                 MakeTool("get_rules",
@@ -206,6 +211,13 @@ namespace Tetris
                     "координаты, счёт, game over. Вызовите перед первой партией и при любом сомнении."));
 
             tools.arrayValue.push_back(MakePlaceTool());
+
+            tools.arrayValue.push_back(MakeTool(
+                "start",
+                "Запустить агентскую игру (нужно выполнить ДО любого другого инструмента). "
+                "Если игра уже запущена (порты 7777-7786), — просто подключиться к ней; "
+                "иначе — запустить новый процесс Tetris.exe --agent в отдельном окне. "
+                "После quit (завершения игры) игру можно запустить повторно — снова start."));
 
             tools.arrayValue.push_back(MakeTool(
                 "move_left",
@@ -350,6 +362,22 @@ namespace Tetris
                 }
             }
 
+            // Отключение от канала (после разрыва / quit игры).
+            void Disconnect()
+            {
+                if (clientSocket != INVALID_SOCKET)
+                {
+                    (void)closesocket(clientSocket);
+                    clientSocket = INVALID_SOCKET;
+                }
+            }
+
+            // Подключено ли к агентскому каналу.
+            bool IsConnected() const
+            {
+                return clientSocket != INVALID_SOCKET;
+            }
+
             // Подключение к первому ответившему порту 7777-7786.
             bool Connect()
             {
@@ -407,6 +435,172 @@ namespace Tetris
                 return ParseJson(line, response);
             }
         };
+
+        // PID агентской игры, запущенной сервером (команда start; 0 — не запущена).
+        // Только свои процессы сервер останавливает; чужую игру (запущенную
+        // пользователем вручную) он не трогает.
+        std::optional<DWORD> spawnedPid;
+
+        // Задействован ли хотя бы один агентский порт 7777-7786 (пробный connect).
+        bool IsAgentPortBusy()
+        {
+            for (int port = AgentChannel::kFirstPort; port < AgentChannel::kFirstPort + AgentChannel::kPortCount;
+                 ++port)
+            {
+                SOCKET candidate = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+                if (candidate == INVALID_SOCKET)
+                {
+                    continue;
+                }
+
+                sockaddr_in addr{};
+                addr.sin_family = AF_INET;
+                addr.sin_port = htons(static_cast<u_short>(port));
+                addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+                const bool busy = connect(candidate, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) == 0;
+                (void)closesocket(candidate);
+
+                if (busy)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Запуск режима агента инструментом start: Tetris.exe --agent из каталога MCP-сервера.
+        // Агенту своё видимое окно (CREATE_NEW_CONSOLE): партию можно наблюдать
+        // вживую, а рендер не конфликтует со stdout/stdin MCP-сервера (у агента
+        // отдельная консоль, а не пайпы клиента).
+        bool SpawnAgent()
+        {
+            wchar_t modulePath[MAX_PATH]{};
+            const DWORD pathLength = GetModuleFileNameW(nullptr, modulePath, MAX_PATH);
+
+            if (pathLength == 0 || pathLength >= MAX_PATH)
+            {
+                return false;
+            }
+
+            std::wstring commandLine;
+            commandLine += L'"';
+            commandLine += modulePath;
+            commandLine += L"\" --agent";
+
+            std::vector<wchar_t> commandBuffer(commandLine.begin(), commandLine.end());
+            commandBuffer.push_back(L'\0');
+
+            STARTUPINFOW startupInfo{};
+            startupInfo.cb = sizeof(startupInfo);
+            PROCESS_INFORMATION processInfo{};
+
+            const BOOL created = CreateProcessW(
+                modulePath,
+                commandBuffer.data(),
+                nullptr,
+                nullptr,
+                false,
+                CREATE_NEW_CONSOLE,
+                nullptr,
+                nullptr,
+                &startupInfo,
+                &processInfo);
+
+            if (!created)
+            {
+                return false;
+            }
+
+            // Живём в фоне: хэндлы процесса сохраняем, чтобы при выходе
+            // MCP-сервера остановить свою игру (TerminateProcess).
+            spawnedPid = processInfo.dwProcessId;
+            (void)CloseHandle(processInfo.hThread);
+
+            std::string modulePathUtf8;
+            const int pathChars =
+                WideCharToMultiByte(CP_UTF8, 0, modulePath, static_cast<int>(pathLength), nullptr, 0, nullptr, nullptr);
+
+            if (pathChars > 0)
+            {
+                modulePathUtf8.resize(static_cast<size_t>(pathChars));
+                (void)WideCharToMultiByte(
+                    CP_UTF8, 0, modulePath, static_cast<int>(pathLength), modulePathUtf8.data(), pathChars, nullptr, nullptr);
+            }
+
+            Log("запущен режим агента: " + modulePathUtf8 + " --agent");
+            return true;
+        }
+
+        // Ожидание появления агентского канала: повторное подключение
+        // каждые 200 мс до дедлайна.
+        bool WaitAgentChannel(AgentClient &client, std::chrono::milliseconds wait)
+        {
+            const auto deadline = std::chrono::steady_clock::now() + wait;
+
+            while (std::chrono::steady_clock::now() < deadline)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+                if (client.Connect())
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Команда start: подключиться к уже запущенной игре либо запустить
+        // свою (Tetris.exe --agent в своём видимом окне) и дождаться канала.
+        bool ConnectOrSpawnAgent(AgentClient &client)
+        {
+            if (client.Connect())
+            {
+                Log("подключено к уже запущенной агентской игре");
+                return true;
+            }
+
+            if (!IsAgentPortBusy() && !SpawnAgent())
+            {
+                Log("запуск режима агента не удался (CreateProcessW: " +
+                    std::to_string(GetLastError()) + ")");
+                return false;
+            }
+            // Порт занят, но никто не отвечает (зависшая чужая игра) —
+            // второго экземпляра не поднимаем, просто ждём её.
+
+            if (!WaitAgentChannel(client, std::chrono::seconds(10)))
+            {
+                Log("агентский канал не появился (10 с) — агент не стартовал или все порты 7777-7786 заняты");
+                return false;
+            }
+
+            Log("подключено к агентской игре");
+            return true;
+        }
+
+        // Остановить агентскую игру, запущенную сервером (командой start),
+        // если она ещё жива. Чужие игры не трогаем.
+        void TerminateSpawnedAgent()
+        {
+            if (spawnedPid.has_value())
+            {
+                HANDLE processHandle = OpenProcess(PROCESS_TERMINATE, FALSE, spawnedPid.value());
+
+                if (processHandle != nullptr)
+                {
+                    (void)TerminateProcess(processHandle, 0);
+                    (void)WaitForSingleObject(processHandle, 5000);
+                    (void)CloseHandle(processHandle);
+                    Log("остановлена агентская игра, запущенная MCP-сервером");
+                }
+
+                spawnedPid.reset();
+            }
+        }
     } // namespace
 
     // MCP-сервер (режим --mcp-server): stdio JSON-RPC 2.0 по спецификации MCP.
@@ -422,15 +616,38 @@ namespace Tetris
         (void)_setmode(_fileno(stdin), _O_BINARY);
         (void)_setmode(_fileno(stdout), _O_BINARY);
 
-        AgentClient client;
-
-        if (!client.Connect())
+        // Запущен MCP-клиентом (stdin — пайп): видимое консольное окно не
+        // оставляем — сервер живёт в фоне. Окно скрываем только если консоль
+        // создана под нас (в ней один процесс — мы; общую консоль, в которую
+        // запущен человек, не трогаем). Консоли нет вовсе (stdio — пайпы,
+        // окно не создавалось) — GetConsoleWindow() вернёт NULL, скрывать
+        // нечего. Кодовую страницу вывода ставим UTF-8: лог в stderr —
+        // UTF-8 из /utf-8-исходников, а кодовая страница консоли печатала
+        // его кракозябрами. При stdin из консоли (запуск человеком) —
+        // ничего не трогаем.
+        if (GetFileType(GetStdHandle(STD_INPUT_HANDLE)) == FILE_TYPE_PIPE)
         {
-            Log("не удалось подключиться к агентскому каналу игры (порты 7777-7786); запущена ли игра с --agent?");
-            return 1;
+            (void)SetConsoleOutputCP(CP_UTF8);
+
+            DWORD consoleProcesses[4]{};
+            const DWORD processCount = GetConsoleProcessList(consoleProcesses, 4);
+
+            if (processCount == 1)
+            {
+                const HWND consoleWindow = GetConsoleWindow();
+
+                if (consoleWindow != nullptr)
+                {
+                    (void)ShowWindow(consoleWindow, SW_HIDE);
+                }
+            }
         }
 
-        Log("подключено к агентскому каналу игры");
+        AgentClient client;
+
+        // Игра не запускается и не подключается автоматически: режим агента
+        // поднимает инструмент start, сервер просто ожидает запросы MCP-клиента.
+        Log("ожидание запросов; агентская игра не запущена (инструмент start — запускает игру)");
 
         std::string line;
 
@@ -565,6 +782,20 @@ namespace Tetris
 
                     extra["actions"] = *actionsValue;
                 }
+                else if (toolName == "start")
+                {
+                    // Локальная команда: запускает агентскую игру, если она не запущена,
+                    // иначе подключается к уже запущенной.
+                    JsonValue startResult;
+                    startResult["agent_running"] = ConnectOrSpawnAgent(client);
+
+                    if (id.present)
+                    {
+                        WriteLine(MakeResult(id, startResult));
+                    }
+
+                    continue;
+                }
                 else
                 {
                     if (id.present)
@@ -580,13 +811,32 @@ namespace Tetris
                     extra["action"] = agentAction;
                 }
 
+                // Игра не запущена — сначала инструмент start.
+                if (!client.IsConnected())
+                {
+                    if (id.present)
+                    {
+                        WriteLine(MakeError(
+                            id,
+                            -32603,
+                            "Агентская игра не запущена. Сначала вызовите инструмент start."));
+                    }
+
+                    continue;
+                }
+
                 JsonValue agentResponse;
 
                 if (!client.Call(agentType, extra, agentResponse))
                 {
+                    client.Disconnect();
+
                     if (id.present)
                     {
-                        WriteLine(MakeError(id, -32603, "Агентский канал: ошибка соединения (игра завершена?)"));
+                        WriteLine(MakeError(
+                            id,
+                            -32603,
+                            "Агентская игра отключилась (завершена?). Запустите её инструментом start."));
                     }
 
                     continue;
@@ -608,6 +858,35 @@ namespace Tetris
                     continue;
                 }
 
+                // Игра завершилась по quit (канал закрыл соединение) —
+                // сбрасываем подключение: агент может запустить новую игру
+                // инструментом start.
+                if (agentType == "quit")
+                {
+                    client.Disconnect();
+
+                    if (spawnedPid.has_value())
+                    {
+                        const HANDLE processHandle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, spawnedPid.value());
+
+                        if (processHandle != nullptr)
+                        {
+                            DWORD exitCode = 0;
+
+                            if (GetExitCodeProcess(processHandle, &exitCode) &&
+                                exitCode != STILL_ACTIVE)
+                            {
+                                (void)CloseHandle(processHandle);
+                                spawnedPid.reset();
+                            }
+                            else
+                            {
+                                (void)CloseHandle(processHandle);
+                            }
+                        }
+                    }
+                }
+
                 // Результат инструмента MCP: content — массив текстовых элементов.
                 JsonValue content;
                 content.type = JsonValue::Type::Array;
@@ -620,6 +899,7 @@ namespace Tetris
                 JsonValue result;
                 result["content"] = content;
                 result["isError"] = false;
+                result["agent_running"] = client.IsConnected();
 
                 if (id.present)
                 {
@@ -641,6 +921,15 @@ namespace Tetris
                 }
             }
         }
+
+        // При выходе останавливаем агентскую игру, если её запустили мы
+        // (команда start). Чужую (запущенную пользователем вручную) не трогаем.
+        if (client.IsConnected())
+        {
+            client.Disconnect();
+        }
+
+        TerminateSpawnedAgent();
 
         Log("stdin закрыт — MCP-сервер завершается");
         return 0;
