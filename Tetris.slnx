@@ -7,4 +7,5 @@
 		<Platform Name="x64" />
 	</Configurations>
 	<Project Path="Tetris\Tetris.vcxproj" Id="10CCAE6D-8872-423C-A0D6-B68998ABC89A" />
+	<Project Path="Tetris.Tests\Tetris.Tests.vcxproj" Id="3B7E9C21-4F5A-4D08-9E6B-2C1D8A4F5013" />
 </Solution>
